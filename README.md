@@ -1,5 +1,7 @@
 # Deepagent Quickstarts 
 
+<img width="1536" height="1024" alt="quick" src="https://github.com/user-attachments/assets/d3d94751-2c33-4686-9d11-a43b975fc4fe" />
+
 ## Overview
 
 [Deepagents](https://github.com/langchain-ai/deepagents) is a simple, opinionated agent harness build on top of [LangGraph](https://github.com/langchain-ai/langgraph). It features a few general, built-in tools that are useful for building many type of agents. 
@@ -9,6 +11,8 @@ These built-in tools follow a few common patterns used across popular agents suc
 ### Tools
 
 Every deepagent comes with a set of general tools by default:
+
+<img width="1536" height="1024" alt="deepagent" src="https://github.com/user-attachments/assets/e16f8e5c-ae76-4716-8e14-d21216cc1ab3" />
 
 | Tool Name | Description |
 |-----------|-------------|
