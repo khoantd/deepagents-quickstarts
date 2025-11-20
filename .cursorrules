@@ -16,6 +16,12 @@ This repository contains quickstarts for building agents using the `deepagents` 
   - `research_agent.ipynb` - Interactive Jupyter notebook
   - `langgraph.json` - LangGraph server configuration
   - `pyproject.toml` - Project dependencies and configuration
+- `thread_service/` - Thread persistence microservice
+  - `thread_service/` - Application code (api, db, proto, models)
+  - `migrations/` - Alembic migrations
+  - `proto/` - Protocol buffer definitions
+  - `run.py` - Service entrypoint
+  - `pyproject.toml` - Dependencies and configuration
 
 ## Code Style & Standards
 
@@ -136,6 +142,35 @@ def tool_name(
 - Professional tone without meta-commentary
 - Citation format: [1], [2], [3] inline, with Sources section at end
 
+## Thread Service Patterns
+
+### Architecture
+- **FastAPI** for HTTP endpoints
+- **gRPC** for high-performance inter-service communication
+- **PostgreSQL** for persistence (AsyncPG + SQLAlchemy)
+- **Pydantic Settings** for configuration management
+
+### Database & Migrations
+- Use **SQLAlchemy** 2.0+ with async engine
+- Use **Alembic** for schema migrations (`uv run alembic upgrade head`)
+- Define models in `thread_service/models.py`
+- Define repositories in `thread_service/repositories.py` for DB access
+
+### Protocol Buffers
+- Definitions in `thread_service/proto/thread_service.proto`
+- Regenerate stubs:
+  ```bash
+  uv run python -m grpc_tools.protoc \
+    -I thread_service/proto \
+    --python_out=thread_service/proto \
+    --grpc_python_out=thread_service/proto \
+    thread_service/proto/thread_service.proto
+  ```
+
+### Testing
+- Use **pytest** with `pytest-asyncio`
+- Run tests: `uv run pytest`
+
 ## File Naming Conventions
 
 - Python modules: `snake_case.py`
@@ -150,6 +185,11 @@ Required API keys (set in `.env` or environment):
 - `GOOGLE_API_KEY` - For Gemini models
 - `TAVILY_API_KEY` - For web search
 - `LANGSMITH_API_KEY` - For LangSmith tracing (optional)
+
+Thread Service Configuration:
+- `THREAD_SERVICE_HTTP_HOST` / `PORT`
+- `THREAD_SERVICE_GRPC_HOST` / `PORT`
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST`, `POSTGRES_PORT`
 
 ## Testing & Development
 
