@@ -41,10 +41,10 @@ def upgrade() -> None:
         name="attachment_kind_enum",
     )
 
-    thread_status.create(op.get_bind(), checkfirst=True)
-    participant_role.create(op.get_bind(), checkfirst=True)
-    message_kind.create(op.get_bind(), checkfirst=True)
-    attachment_kind.create(op.get_bind(), checkfirst=True)
+    # thread_status.create(op.get_bind(), checkfirst=True)
+    # participant_role.create(op.get_bind(), checkfirst=True)
+    # message_kind.create(op.get_bind(), checkfirst=True)
+    # attachment_kind.create(op.get_bind(), checkfirst=True)
 
     op.create_table(
         "threads",

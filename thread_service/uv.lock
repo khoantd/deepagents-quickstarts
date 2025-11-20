@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.11"
 
 [[package]]
@@ -875,6 +875,7 @@ dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
     { name = "fastapi" },
+    { name = "greenlet" },
     { name = "grpcio" },
     { name = "grpcio-tools" },
     { name = "httpx" },
@@ -899,6 +900,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.13.2" },
     { name = "asyncpg", specifier = ">=0.29.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
+    { name = "greenlet", specifier = ">=3.2.4" },
     { name = "grpcio", specifier = ">=1.65.1" },
     { name = "grpcio-tools", specifier = ">=1.65.1" },
     { name = "httpx", specifier = ">=0.28.1" },

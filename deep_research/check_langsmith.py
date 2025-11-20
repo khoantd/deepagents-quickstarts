@@ -91,7 +91,38 @@ else:
     print("4. If using org-scoped key, ensure workspace ID is correct for that org")
 
 print("\n" + "=" * 80)
-print("To test LangSmith connection, you can run:")
+print("Testing API Connectivity...")
 print("=" * 80)
-print("python -c \"from langsmith import Client; client = Client(); print('✓ Connection successful!')\"")
+
+try:
+    from langsmith import Client
+    import requests
+    
+    client = Client()
+    try:
+        # Try to list projects (read-only operation usually)
+        projects = list(client.list_projects(limit=1))
+        print("✓ Connection successful! API Key and Workspace ID are valid.")
+        print(f"  Accessing Workspace: {workspace_id if workspace_id else 'Default'}")
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 403:
+            print("❌ Connection FAILED: 403 Forbidden")
+            print("  ROOT CAUSE: The API Key does not have permission to access the specified Workspace.")
+            print("  SOLUTIONS:")
+            print("  1. Check if LANGSMITH_WORKSPACE_ID is correct.")
+            print("  2. Ensure your API Key belongs to the same Organization as the Workspace.")
+            print("  3. Try creating a new API Key from https://smith.langchain.com/settings")
+        elif e.response.status_code == 401:
+            print("❌ Connection FAILED: 401 Unauthorized")
+            print("  ROOT CAUSE: The API Key is invalid or expired.")
+            print("  SOLUTION: Generate a new API Key at https://smith.langchain.com/settings")
+        else:
+            print(f"❌ Connection FAILED: {e}")
+    except Exception as e:
+        print(f"❌ Connection FAILED: {str(e)}")
+        if "403" in str(e):
+             print("  ROOT CAUSE: The API Key does not have permission to access the specified Workspace.")
+except ImportError:
+    print("⚠️  Could not import langsmith. Run 'uv sync' to install dependencies.")
+
 

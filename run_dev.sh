@@ -15,6 +15,7 @@ NC='\033[0m' # No Color
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEEP_RESEARCH_DIR="${SCRIPT_DIR}/deep_research"
+DEEP_AGENTS_UI_DIR="${SCRIPT_DIR}/deep-agents-ui"
 
 echo -e "${BLUE}🚀 Deep Research Agent - Development Setup${NC}\n"
 
@@ -27,6 +28,17 @@ if ! command -v uv &> /dev/null; then
 fi
 
 echo -e "${GREEN}✓${NC} uv is installed"
+
+# Check if npm or yarn is installed (for UI)
+if command -v yarn &> /dev/null; then
+    PKG_MANAGER="yarn"
+    echo -e "${GREEN}✓${NC} yarn is installed"
+elif command -v npm &> /dev/null; then
+    PKG_MANAGER="npm"
+    echo -e "${GREEN}✓${NC} npm is installed"
+else
+    echo -e "${YELLOW}⚠️  Warning: neither npm nor yarn is installed. UI mode will not work.${NC}"
+fi
 
 # Change to deep_research directory
 if [ ! -d "$DEEP_RESEARCH_DIR" ]; then
@@ -91,8 +103,9 @@ fi
 echo -e "\n${BLUE}Select run mode:${NC}"
 echo "1) Jupyter Notebook (interactive development)"
 echo "2) LangGraph Server (web interface)"
-echo "3) Exit"
-echo -ne "${YELLOW}Enter choice [1-3]: ${NC}"
+echo "3) Deep Agents UI (Next.js web app)"
+echo "4) Exit"
+echo -ne "${YELLOW}Enter choice [1-4]: ${NC}"
 read -r choice
 
 case $choice in
@@ -108,6 +121,26 @@ case $choice in
         uv run langgraph dev
         ;;
     3)
+        if [ -z "$PKG_MANAGER" ]; then
+            echo -e "${RED}❌ Error: npm or yarn is required for UI mode${NC}"
+            exit 1
+        fi
+        
+        if [ ! -d "$DEEP_AGENTS_UI_DIR" ]; then
+            echo -e "${RED}❌ Error: deep-agents-ui directory not found${NC}"
+            exit 1
+        fi
+
+        echo -e "\n${GREEN}🌐 Starting Deep Agents UI...${NC}"
+        cd "$DEEP_AGENTS_UI_DIR"
+        
+        echo -e "${BLUE}Installing/Updating dependencies...${NC}"
+        $PKG_MANAGER install
+        
+        echo -e "${BLUE}Starting development server...${NC}"
+        $PKG_MANAGER run dev
+        ;;
+    4)
         echo -e "${BLUE}Exiting...${NC}"
         exit 0
         ;;
