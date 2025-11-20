@@ -24,6 +24,7 @@ export ANTHROPIC_API_KEY=your_anthropic_api_key_here  # Required for Claude mode
 export GOOGLE_API_KEY=your_google_api_key_here        # Required for Gemini model ([get one here](https://ai.google.dev/gemini-api/docs))
 export TAVILY_API_KEY=your_tavily_api_key_here        # Required for web search ([get one here](https://www.tavily.com/)) with a generous free tier
 export LANGSMITH_API_KEY=your_langsmith_api_key_here  # [LangSmith API key](https://smith.langchain.com/settings) (free to sign up)
+export LANGSMITH_WORKSPACE_ID=your_workspace_id_here  # Required if API key is org-scoped (find in LangSmith settings)
 ```
 
 ## Usage Options
@@ -42,9 +43,23 @@ uv run jupyter notebook research_agent.ipynb
 
 Run a local [LangGraph server](https://langchain-ai.github.io/langgraph/tutorials/langgraph-platform/local-server/) with a web interface:
 
+**Recommended**: Use the helper script to ensure LangSmith environment variables are properly loaded:
+
+```bash
+# Bash (macOS/Linux)
+./run_langgraph.sh
+
+# Python (cross-platform)
+python run_langgraph.py
+```
+
+**Or manually**:
+
 ```bash
 langgraph dev
 ```
+
+> **Note**: If you encounter LangSmith 403 errors, use the helper scripts above. They ensure `LANGSMITH_API_KEY` and `LANGSMITH_WORKSPACE_ID` are properly exported before starting the server.
 
 LangGraph server will open a new browser window with the Studio interface, which you can submit your search query to: 
 
@@ -61,7 +76,33 @@ $ yarn dev
 
 Then follow the instructions in the [deepagents-ui README](https://github.com/langchain-ai/deepagents-ui?tab=readme-ov-file#connecting-to-a-langgraph-server) to connect the UI to the running LangGraph server.
 
-This provides a user-friendly chat interface and visualization of files in state. 
+This provides a user-friendly chat interface and visualization of files in state.
+
+## 🔧 Troubleshooting
+
+### LangSmith 403 Forbidden Errors
+
+If you see errors like `Failed to POST https://api.smith.langchain.com/runs/multipart: 403 Forbidden`, this usually means:
+
+1. **Org-scoped API key without workspace ID**: If your `LANGSMITH_API_KEY` is org-scoped, you **must** set `LANGSMITH_WORKSPACE_ID` in your `.env` file.
+
+2. **Environment variables not loaded**: LangGraph may not always load `.env` variables correctly. Use the helper scripts:
+   ```bash
+   ./run_langgraph.sh    # Bash
+   python run_langgraph.py  # Python
+   ```
+
+3. **Verify your configuration**: Run the diagnostic script:
+   ```bash
+   python check_langsmith.py
+   ```
+
+4. **Disable tracing temporarily**: If you don't need tracing, add to your `.env`:
+   ```bash
+   LANGCHAIN_TRACING_V2=false
+   ```
+
+> **Note**: LangSmith tracing errors are warnings and won't break the agent - they just disable tracing functionality. 
 
 <img width="2039" height="1495" alt="Screenshot 2025-11-17 at 1 11 27 PM" src="https://github.com/user-attachments/assets/d559876b-4c90-46fb-8e70-c16c93793fa8" />
 
