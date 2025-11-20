@@ -14,7 +14,7 @@ Standalone FastAPI + gRPC service responsible for persisting agent threads in Po
 cd thread_service
 uv sync
 cp env.example .env
-uv run python -m thread_service.run
+uv run python run.py
 ```
 
 This starts FastAPI on `THREAD_SERVICE_HTTP_*` and the gRPC server on `THREAD_SERVICE_GRPC_*`.

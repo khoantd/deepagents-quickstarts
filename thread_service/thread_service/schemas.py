@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .models import AttachmentKind, MessageKind, ParticipantRole, ThreadStatus
 
@@ -14,9 +14,33 @@ from .models import AttachmentKind, MessageKind, ParticipantRole, ThreadStatus
 class MetadataMixin(BaseModel):
     """Helper mixin that normalizes metadata payloads."""
 
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict, alias="custom_metadata")
 
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True, populate_by_name=True)
+
+    @field_validator("metadata", mode="before")
+    @classmethod
+    def normalize_metadata(cls, v: Any) -> dict[str, Any]:
+        """Normalize metadata from various sources (custom_metadata attribute, MetaData objects, etc.)."""
+        # Handle SQLAlchemy MetaData objects
+        from sqlalchemy import MetaData as SQLAMetaData
+        if isinstance(v, SQLAMetaData):
+            return {}
+        # Handle None
+        if v is None:
+            return {}
+        # Handle dict
+        if isinstance(v, dict):
+            return v
+        # Try to convert to dict
+        try:
+            if hasattr(v, "items"):
+                return dict(v.items())
+            if hasattr(v, "__iter__") and not isinstance(v, (str, bytes)):
+                return dict(v)
+        except (TypeError, ValueError):
+            pass
+        return {}
 
 
 class ParticipantCreate(MetadataMixin):
@@ -99,3 +123,66 @@ class MessageSearchFilters(BaseModel):
     participant_id: UUID | None = None
     created_after: datetime | None = None
     created_before: datetime | None = None
+
+
+# Authentication schemas
+class UserCreate(BaseModel):
+    email: str
+    password: str
+    name: str | None = None
+
+
+class UserRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    email: str
+    name: str | None = None
+    avatar_url: str | None = None
+    email_verified: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class UserUpdate(BaseModel):
+    name: str | None = None
+    avatar_url: str | None = None
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    name: str | None = None
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserRead
+
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str
+
+
+class EmailVerificationRequest(BaseModel):
+    token: str
+
+
+class OAuthUserInfo(BaseModel):
+    """OAuth user information from NextAuth."""
+    provider: str
+    provider_user_id: str
+    email: str
+    name: str | None = None
+    avatar_url: str | None = None

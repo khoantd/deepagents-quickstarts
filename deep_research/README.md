@@ -25,6 +25,10 @@ export GOOGLE_API_KEY=your_google_api_key_here        # Required for Gemini mode
 export TAVILY_API_KEY=your_tavily_api_key_here        # Required for web search ([get one here](https://www.tavily.com/)) with a generous free tier
 export LANGSMITH_API_KEY=your_langsmith_api_key_here  # [LangSmith API key](https://smith.langchain.com/settings) (free to sign up)
 export LANGSMITH_WORKSPACE_ID=your_workspace_id_here  # Required if API key is org-scoped (find in LangSmith settings)
+
+# Optional: LightRAG knowledge base integration
+export LIGHTRAG_API_URL=https://lightrag-latest-xyu3.onrender.com  # LightRAG API URL (defaults to this if not set)
+export LIGHTRAG_API_KEY=your_lightrag_api_key_here     # Optional: API key for LightRAG authentication
 ```
 
 ## Usage Options
@@ -148,4 +152,26 @@ The deep research agent adds the following custom tools beyond the built-in deep
 |-----------|-------------|
 | `tavily_search` | Web search tool that uses Tavily purely as a URL discovery engine. Performs searches using Tavily API to find relevant URLs, fetches full webpage content via HTTP with proper User-Agent headers (avoiding 403 errors), converts HTML to markdown, and returns the complete content without summarization to preserve all information for the agent's analysis. Works with both Claude and Gemini models. |
 | `think_tool` | Strategic reflection mechanism that helps the agent pause and assess progress between searches, analyze findings, identify gaps, and plan next steps. |
+| `lightrag_query` | Query the LightRAG knowledge base for stored information. Use this to retrieve information from documents that have been previously uploaded or text that has been inserted into the system. Supports multiple query modes: 'mix' (default), 'local' (entity-based), 'global' (relationship-based), 'hybrid', 'naive', or 'bypass'. |
+| `lightrag_insert_text` | Insert text into the LightRAG knowledge base for later retrieval. Use this to store research findings, summaries, or important information so it can be retrieved later using `lightrag_query`. |
+| `lightrag_upload_document` | Upload a file to the LightRAG knowledge base for indexing. The document will be processed and indexed for later retrieval. Supports various file formats (PDF, text files, etc.). |
+| `lightrag_get_status` | Get the status of documents and pipeline in the LightRAG knowledge base. Check document processing status (pending, processing, processed, failed) and pipeline status (busy, progress, current job). |
+
+#### When to Use LightRAG vs Web Search
+
+- **Use `tavily_search`** when you need:
+  - Current, up-to-date information from the web
+  - Information that changes frequently (news, recent events)
+  - Broad exploration of topics not in your knowledge base
+  - Finding new sources and URLs
+
+- **Use `lightrag_query`** when you need:
+  - Information from documents you've previously uploaded
+  - Querying a curated knowledge base
+  - Retrieving stored research findings
+  - Information that has been inserted into the system
+
+The agent can use both tools together - for example, using web search to find new information and then storing key findings in LightRAG for future retrieval.
+
+> **Note**: LightRAG tools are optional. If `LIGHTRAG_API_URL` and `LIGHTRAG_API_KEY` are not configured, the tools will return an error message but won't break the agent. The agent will continue to work with web search functionality.
 

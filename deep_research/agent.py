@@ -31,7 +31,14 @@ from research_agent.prompts import (
     SUBAGENT_DELEGATION_INSTRUCTIONS,
     TECHNICAL_DOCUMENTATION_INSTRUCTIONS,
 )
-from research_agent.tools import tavily_search, think_tool
+from research_agent.tools import (
+    lightrag_get_status,
+    lightrag_insert_text,
+    lightrag_query,
+    lightrag_upload_document,
+    tavily_search,
+    think_tool,
+)
 
 # Limits
 max_concurrent_research_units = 3
@@ -59,28 +66,56 @@ research_sub_agent = {
     "name": "research-agent",
     "description": "General research agent for comprehensive web research on any topic. Use for broad research questions, overviews, and general information gathering.",
     "system_prompt": RESEARCHER_INSTRUCTIONS.format(date=current_date),
-    "tools": [tavily_search, think_tool],
+    "tools": [
+        tavily_search,
+        think_tool,
+        lightrag_query,
+        lightrag_insert_text,
+        lightrag_upload_document,
+        lightrag_get_status,
+    ],
 }
 
 news_researcher_agent = {
     "name": "news-researcher",
     "description": "News specialist for finding current events, recent developments, and breaking news. Use when the query requires up-to-date information from news sources.",
     "system_prompt": NEWS_RESEARCHER_INSTRUCTIONS.format(date=current_date),
-    "tools": [tavily_search, think_tool],
+    "tools": [
+        tavily_search,
+        think_tool,
+        lightrag_query,
+        lightrag_insert_text,
+        lightrag_upload_document,
+        lightrag_get_status,
+    ],
 }
 
 technical_docs_agent = {
     "name": "technical-docs-researcher",
     "description": "Technical documentation specialist for finding API docs, developer guides, and technical resources. Use for queries about APIs, libraries, frameworks, or technical implementation details.",
     "system_prompt": TECHNICAL_DOCUMENTATION_INSTRUCTIONS.format(date=current_date),
-    "tools": [tavily_search, think_tool],
+    "tools": [
+        tavily_search,
+        think_tool,
+        lightrag_query,
+        lightrag_insert_text,
+        lightrag_upload_document,
+        lightrag_get_status,
+    ],
 }
 
 code_analyst_agent = {
     "name": "code-analyst",
     "description": "Code analysis specialist for analyzing codebases, understanding code patterns, and providing technical insights. Use for code review, architecture analysis, or understanding implementation patterns.",
     "system_prompt": CODE_ANALYST_INSTRUCTIONS.format(date=current_date),
-    "tools": [tavily_search, think_tool],
+    "tools": [
+        tavily_search,
+        think_tool,
+        lightrag_query,
+        lightrag_insert_text,
+        lightrag_upload_document,
+        lightrag_get_status,
+    ],
 }
 
 # Model options:
@@ -95,7 +130,14 @@ model = init_chat_model(model="openai:gpt-4o", temperature=0.0)
 # Add or remove agents from this list to customize available sub-agents
 agent = create_deep_agent(
     model=model,
-    tools=[tavily_search, think_tool],
+    tools=[
+        tavily_search,
+        think_tool,
+        lightrag_query,
+        lightrag_insert_text,
+        lightrag_upload_document,
+        lightrag_get_status,
+    ],
     system_prompt=INSTRUCTIONS,
     subagents=[
         research_sub_agent,  # General research

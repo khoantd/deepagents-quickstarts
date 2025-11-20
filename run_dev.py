@@ -2,7 +2,11 @@
 """Development run script for Deep Research Agent.
 
 This script sets up and runs the research agent in development mode.
-Supports both Jupyter Notebook and LangGraph Server modes.
+Supports:
+- Jupyter Notebook (interactive development)
+- LangGraph Server (web interface)
+- Thread Service (authentication & persistence backend)
+- Deep Agents UI (Next.js web application)
 """
 
 import os
@@ -58,6 +62,12 @@ TAVILY_API_KEY=your_tavily_api_key_here
 
 # Optional: For LangSmith tracing (free to sign up at https://smith.langchain.com/settings)
 LANGSMITH_API_KEY=your_langsmith_api_key_here
+
+# Optional: For LightRAG knowledge base integration
+# LightRAG API URL (defaults to https://lightrag-latest-xyu3.onrender.com if not set)
+LIGHTRAG_API_URL=https://lightrag-latest-xyu3.onrender.com
+# LightRAG API Key (optional, for authentication)
+LIGHTRAG_API_KEY=your_lightrag_api_key_here
 """)
 
 
@@ -93,9 +103,11 @@ def main():
     
     print_colored("✓ uv is installed", Colors.GREEN)
     
-    # Get script directory and deep_research path
+    # Get script directory and paths
     script_dir = Path(__file__).parent.resolve()
     deep_research_dir = script_dir / "deep_research"
+    thread_service_dir = script_dir / "thread_service"
+    deep_agents_ui_dir = script_dir / "deep-agents-ui"
     
     if not deep_research_dir.exists():
         print_colored("❌ Error: deep_research directory not found", Colors.RED)
@@ -156,10 +168,12 @@ def main():
     print_colored("\nSelect run mode:", Colors.BLUE)
     print("1) Jupyter Notebook (interactive development)")
     print("2) LangGraph Server (web interface)")
-    print("3) Exit")
+    print("3) Thread Service (authentication & persistence backend)")
+    print("4) Deep Agents UI (Next.js web application)")
+    print("5) Exit")
     
     try:
-        choice = input(f"{Colors.YELLOW}Enter choice [1-3]: {Colors.NC}").strip()
+        choice = input(f"{Colors.YELLOW}Enter choice [1-5]: {Colors.NC}").strip()
     except KeyboardInterrupt:
         print_colored("\n\nExiting...", Colors.BLUE)
         sys.exit(0)
@@ -188,6 +202,103 @@ def main():
             sys.exit(1)
     
     elif choice == "3":
+        if not thread_service_dir.exists():
+            print_colored("❌ Error: thread_service directory not found", Colors.RED)
+            sys.exit(1)
+        
+        print_colored("\n🔧 Starting Thread Service...", Colors.GREEN)
+        print_colored("The service provides authentication and thread persistence", Colors.BLUE)
+        print_colored("HTTP API: http://localhost:8080", Colors.BLUE)
+        print_colored("gRPC: localhost:50051", Colors.BLUE)
+        print_colored("Press Ctrl+C to stop the service\n", Colors.YELLOW)
+        
+        # Change to thread_service directory
+        os.chdir(thread_service_dir)
+        
+        # Check if .env exists in thread_service
+        thread_env_file = thread_service_dir / ".env"
+        if not thread_env_file.exists():
+            print_colored("⚠️  Warning: .env file not found in thread_service", Colors.YELLOW)
+            print_colored("   Using default configuration. Create .env for custom settings.", Colors.YELLOW)
+        
+        # Install dependencies for thread_service
+        print_colored("📦 Installing thread_service dependencies...", Colors.BLUE)
+        try:
+            subprocess.run(["uv", "sync"], check=True, cwd=thread_service_dir)
+            print_colored("✓ Dependencies installed", Colors.GREEN)
+        except subprocess.CalledProcessError:
+            print_colored("❌ Error: Failed to install thread_service dependencies", Colors.RED)
+            sys.exit(1)
+        
+        # Run the thread service
+        try:
+            subprocess.run(["uv", "run", "python", "run.py"], check=True, cwd=thread_service_dir)
+        except KeyboardInterrupt:
+            print_colored("\n\nStopped Thread Service", Colors.YELLOW)
+        except subprocess.CalledProcessError:
+            print_colored("❌ Error: Failed to start Thread Service", Colors.RED)
+            sys.exit(1)
+    
+    elif choice == "4":
+        if not deep_agents_ui_dir.exists():
+            print_colored("❌ Error: deep-agents-ui directory not found", Colors.RED)
+            sys.exit(1)
+        
+        # Check for package manager (yarn or npm)
+        pkg_manager = None
+        if check_command("yarn"):
+            pkg_manager = "yarn"
+            print_colored("✓ yarn is available", Colors.GREEN)
+        elif check_command("npm"):
+            pkg_manager = "npm"
+            print_colored("✓ npm is available", Colors.GREEN)
+        else:
+            print_colored("❌ Error: Neither yarn nor npm is installed", Colors.RED)
+            print_colored("   Please install yarn or npm to run the UI", Colors.YELLOW)
+            sys.exit(1)
+        
+        print_colored("\n🌐 Starting Deep Agents UI...", Colors.GREEN)
+        print_colored("The Next.js app will start on http://localhost:3000", Colors.BLUE)
+        print_colored("Press Ctrl+C to stop the server\n", Colors.YELLOW)
+        
+        # Change to deep-agents-ui directory
+        os.chdir(deep_agents_ui_dir)
+        
+        # Check if node_modules exists, if not install dependencies
+        node_modules = deep_agents_ui_dir / "node_modules"
+        if not node_modules.exists():
+            print_colored("📦 Installing dependencies...", Colors.BLUE)
+            try:
+                if pkg_manager == "yarn":
+                    subprocess.run(["yarn", "install"], check=True, cwd=deep_agents_ui_dir)
+                else:
+                    subprocess.run(["npm", "install"], check=True, cwd=deep_agents_ui_dir)
+                print_colored("✓ Dependencies installed", Colors.GREEN)
+            except subprocess.CalledProcessError:
+                print_colored("❌ Error: Failed to install dependencies", Colors.RED)
+                sys.exit(1)
+        else:
+            print_colored("✓ Dependencies already installed", Colors.GREEN)
+        
+        # Check for .env.local file
+        env_local_file = deep_agents_ui_dir / ".env.local"
+        if not env_local_file.exists():
+            print_colored("⚠️  Warning: .env.local file not found", Colors.YELLOW)
+            print_colored("   Create .env.local with AUTH_SECRET and OAuth credentials if needed", Colors.YELLOW)
+        
+        # Run the development server
+        try:
+            if pkg_manager == "yarn":
+                subprocess.run(["yarn", "dev"], check=True, cwd=deep_agents_ui_dir)
+            else:
+                subprocess.run(["npm", "run", "dev"], check=True, cwd=deep_agents_ui_dir)
+        except KeyboardInterrupt:
+            print_colored("\n\nStopped Deep Agents UI", Colors.YELLOW)
+        except subprocess.CalledProcessError:
+            print_colored("❌ Error: Failed to start Deep Agents UI", Colors.RED)
+            sys.exit(1)
+    
+    elif choice == "5":
         print_colored("Exiting...", Colors.BLUE)
         sys.exit(0)
     

@@ -16,6 +16,7 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEEP_RESEARCH_DIR="${SCRIPT_DIR}/deep_research"
 DEEP_AGENTS_UI_DIR="${SCRIPT_DIR}/deep-agents-ui"
+THREAD_SERVICE_DIR="${SCRIPT_DIR}/thread_service"
 
 echo -e "${BLUE}🚀 Deep Research Agent - Development Setup${NC}\n"
 
@@ -103,9 +104,10 @@ fi
 echo -e "\n${BLUE}Select run mode:${NC}"
 echo "1) Jupyter Notebook (interactive development)"
 echo "2) LangGraph Server (web interface)"
-echo "3) Deep Agents UI (Next.js web app)"
-echo "4) Exit"
-echo -ne "${YELLOW}Enter choice [1-4]: ${NC}"
+echo "3) Thread Service (authentication & persistence backend)"
+echo "4) Deep Agents UI (Next.js web application)"
+echo "5) Exit"
+echo -ne "${YELLOW}Enter choice [1-5]: ${NC}"
 read -r choice
 
 case $choice in
@@ -121,6 +123,33 @@ case $choice in
         uv run langgraph dev
         ;;
     3)
+        if [ ! -d "$THREAD_SERVICE_DIR" ]; then
+            echo -e "${RED}❌ Error: thread_service directory not found${NC}"
+            exit 1
+        fi
+        
+        echo -e "\n${GREEN}🔧 Starting Thread Service...${NC}"
+        echo -e "${BLUE}The service provides authentication and thread persistence${NC}"
+        echo -e "${BLUE}HTTP API: http://localhost:8080${NC}"
+        echo -e "${BLUE}gRPC: localhost:50051${NC}"
+        echo -e "${YELLOW}Press Ctrl+C to stop the service${NC}\n"
+        
+        cd "$THREAD_SERVICE_DIR"
+        
+        # Check if .env exists in thread_service
+        if [ ! -f "$THREAD_SERVICE_DIR/.env" ]; then
+            echo -e "${YELLOW}⚠️  Warning: .env file not found in thread_service${NC}"
+            echo -e "${YELLOW}   Using default configuration. Create .env for custom settings.${NC}"
+        fi
+        
+        # Install dependencies for thread_service
+        echo -e "${BLUE}📦 Installing thread_service dependencies...${NC}"
+        uv sync
+        
+        # Run the thread service
+        uv run python run.py
+        ;;
+    4)
         if [ -z "$PKG_MANAGER" ]; then
             echo -e "${RED}❌ Error: npm or yarn is required for UI mode${NC}"
             exit 1
@@ -132,15 +161,30 @@ case $choice in
         fi
 
         echo -e "\n${GREEN}🌐 Starting Deep Agents UI...${NC}"
+        echo -e "${BLUE}The Next.js app will start on http://localhost:3000${NC}"
+        echo -e "${YELLOW}Press Ctrl+C to stop the server${NC}\n"
+        
         cd "$DEEP_AGENTS_UI_DIR"
         
-        echo -e "${BLUE}Installing/Updating dependencies...${NC}"
-        $PKG_MANAGER install
+        # Check if node_modules exists, if not install dependencies
+        if [ ! -d "$DEEP_AGENTS_UI_DIR/node_modules" ]; then
+            echo -e "${BLUE}📦 Installing dependencies...${NC}"
+            $PKG_MANAGER install
+            echo -e "${GREEN}✓${NC} Dependencies installed"
+        else
+            echo -e "${GREEN}✓${NC} Dependencies already installed"
+        fi
+        
+        # Check for .env.local file
+        if [ ! -f "$DEEP_AGENTS_UI_DIR/.env.local" ]; then
+            echo -e "${YELLOW}⚠️  Warning: .env.local file not found${NC}"
+            echo -e "${YELLOW}   Create .env.local with AUTH_SECRET and OAuth credentials if needed${NC}"
+        fi
         
         echo -e "${BLUE}Starting development server...${NC}"
         $PKG_MANAGER run dev
         ;;
-    4)
+    5)
         echo -e "${BLUE}Exiting...${NC}"
         exit 0
         ;;

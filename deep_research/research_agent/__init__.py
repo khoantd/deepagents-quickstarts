@@ -9,11 +9,22 @@ from research_agent.prompts import (
     RESEARCH_WORKFLOW_INSTRUCTIONS,
     SUBAGENT_DELEGATION_INSTRUCTIONS,
 )
-from research_agent.tools import tavily_search, think_tool
+from research_agent.tools import (
+    lightrag_get_status,
+    lightrag_insert_text,
+    lightrag_query,
+    lightrag_upload_document,
+    tavily_search,
+    think_tool,
+)
 
 __all__ = [
     "tavily_search",
     "think_tool",
+    "lightrag_query",
+    "lightrag_insert_text",
+    "lightrag_upload_document",
+    "lightrag_get_status",
     "RESEARCHER_INSTRUCTIONS",
     "RESEARCH_WORKFLOW_INSTRUCTIONS",
     "SUBAGENT_DELEGATION_INSTRUCTIONS",

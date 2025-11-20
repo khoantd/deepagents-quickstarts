@@ -76,7 +76,7 @@ def _participant_to_proto(participant) -> pb2.Participant:  # type: ignore[no-un
         thread_id=str(participant.thread_id),
         role=_PARTICIPANT_ROLE_TO_PB.get(participant.role, pb2.PARTICIPANT_ROLE_UNSPECIFIED),
         display_name=participant.display_name or "",
-        metadata=_dict_to_struct(participant.metadata),
+        metadata=_dict_to_struct(participant.custom_metadata),
         created_at=_timestamp_from_datetime(participant.created_at),
     )
 
@@ -88,7 +88,7 @@ def _attachment_to_proto(attachment) -> pb2.Attachment:  # type: ignore[no-untyp
         kind=_ATTACHMENT_KIND_TO_PB.get(attachment.kind, pb2.ATTACHMENT_KIND_UNSPECIFIED),
         uri=attachment.uri,
         content_type=attachment.content_type or "",
-        metadata=_dict_to_struct(attachment.metadata),
+        metadata=_dict_to_struct(attachment.custom_metadata),
         created_at=_timestamp_from_datetime(attachment.created_at),
     )
 
@@ -100,7 +100,7 @@ def _message_to_proto(message) -> pb2.Message:  # type: ignore[no-untyped-def]
         participant_id=str(message.participant_id or ""),
         kind=_MESSAGE_KIND_TO_PB.get(message.kind, pb2.MESSAGE_KIND_UNSPECIFIED),
         content=message.content,
-        metadata=_dict_to_struct(message.metadata),
+        metadata=_dict_to_struct(message.custom_metadata),
         created_at=_timestamp_from_datetime(message.created_at),
         attachments=[_attachment_to_proto(att) for att in getattr(message, "attachments", [])],
     )
@@ -112,7 +112,7 @@ def _thread_to_proto(thread) -> pb2.Thread:  # type: ignore[no-untyped-def]
         title=thread.title or "",
         status=_THREAD_STATUS_TO_PB.get(thread.status, pb2.THREAD_STATUS_UNSPECIFIED),
         summary=thread.summary or "",
-        metadata=_dict_to_struct(thread.metadata),
+        metadata=_dict_to_struct(thread.custom_metadata),
         created_at=_timestamp_from_datetime(thread.created_at),
         updated_at=_timestamp_from_datetime(thread.updated_at),
         participants=[_participant_to_proto(p) for p in getattr(thread, "participants", [])],

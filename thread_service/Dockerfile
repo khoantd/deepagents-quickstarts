@@ -9,8 +9,9 @@ COPY uv.lock ./
 COPY thread_service ./thread_service
 COPY migrations ./migrations
 COPY alembic.ini ./alembic.ini
+COPY run.py ./run.py
 
 RUN uv sync --frozen --no-dev
 
 EXPOSE 8080 50051
-CMD ["uv", "run", "python", "-m", "thread_service.run"]
+CMD ["uv", "run", "python", "run.py"]
