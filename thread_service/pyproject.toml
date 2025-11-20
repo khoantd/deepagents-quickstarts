@@ -1,0 +1,44 @@
+[project]
+name = "thread-service"
+version = "0.1.0"
+description = "Thread persistence microservice backed by PostgreSQL, FastAPI, and gRPC."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.4.0",
+    "SQLAlchemy>=2.0.32",
+    "asyncpg>=0.29.0",
+    "alembic>=1.13.2",
+    "python-dotenv>=1.0.1",
+    "grpcio>=1.65.1",
+    "grpcio-tools>=1.65.1",
+    "protobuf>=4.25.4",
+    "httpx>=0.28.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6.1",
+    "pytest>=8.3.2",
+    "pytest-asyncio>=0.23.8",
+    "mypy>=1.11.2",
+]
+
+[build-system]
+requires = ["setuptools>=73.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["thread_service"]
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+
+[tool.ruff]
+lint.select = ["E", "F", "I", "D", "UP", "B", "ASYNC"]
+lint.ignore = ["D203", "D213", "D417", "E501"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

@@ -1,0 +1,176 @@
+# Deepagents Quickstarts - Cursor Rules
+
+## Project Overview
+
+This repository contains quickstarts for building agents using the `deepagents` package. The main quickstart is a **Deep Research Agent** that conducts multi-step web research using Tavily for URL discovery, fetches full webpage content, and coordinates work through parallel sub-agents and strategic reflection.
+
+## Project Structure
+
+- `deep_research/` - Main research agent quickstart
+  - `agent.py` - Standalone script for LangGraph deployment
+  - `research_agent/` - Agent module package
+    - `prompts.py` - Custom prompt templates (workflow, delegation, researcher instructions)
+    - `tools.py` - Custom tools (tavily_search, think_tool)
+    - `__init__.py` - Package exports
+  - `utils.py` - Jupyter notebook utilities for message formatting
+  - `research_agent.ipynb` - Interactive Jupyter notebook
+  - `langgraph.json` - LangGraph server configuration
+  - `pyproject.toml` - Project dependencies and configuration
+
+## Code Style & Standards
+
+### Python Version
+- **Python 3.11+** required (specified in pyproject.toml)
+
+### Package Management
+- Use **uv** for package management (`uv sync`, `uv run`)
+- Dependencies are defined in `pyproject.toml`
+- Lock file: `uv.lock`
+
+### Linting & Formatting
+- **Ruff** is used for linting (configured in pyproject.toml)
+- Follow Google-style docstrings (pydocstyle convention)
+- Use type hints with `typing_extensions` for compatibility
+- Line length: E501 is ignored (allow long lines when needed)
+
+### Code Patterns
+
+#### Tool Definitions
+- Use `@tool(parse_docstring=True)` decorator from `langchain_core.tools`
+- Use `Annotated` types with `InjectedToolArg` for default parameters
+- Include comprehensive docstrings with Args and Returns sections
+- Example pattern:
+```python
+@tool(parse_docstring=True)
+def tool_name(
+    param: str,
+    default_param: Annotated[int, InjectedToolArg] = 1,
+) -> str:
+    """Tool description.
+    
+    Args:
+        param: Parameter description
+        default_param: Default parameter description
+    
+    Returns:
+        Return value description
+    """
+```
+
+#### Prompt Templates
+- Store prompts as module-level string constants
+- Use `.format()` for dynamic values (e.g., dates, limits)
+- Separate concerns: workflow, delegation, researcher instructions
+- Use XML-style tags (`<Tag>`) for structured sections in prompts
+
+#### Agent Configuration
+- Use `create_deep_agent()` from `deepagents` package
+- Combine instructions with clear separators (`"=" * 80`)
+- Define sub-agents as dictionaries with: `name`, `description`, `system_prompt`, `tools`
+- Support both Claude (via `init_chat_model`) and Gemini (via `ChatGoogleGenerativeAI`)
+
+#### Error Handling
+- Use try/except blocks for external API calls (e.g., HTTP requests)
+- Return descriptive error messages in tool responses
+- Use `httpx` for HTTP requests with proper User-Agent headers
+
+## Key Dependencies
+
+- `deepagents>=0.2.6` - Core agent framework
+- `langchain-*` packages - LangChain integrations
+- `tavily-python>=0.5.0` - Web search API
+- `httpx>=0.28.1` - HTTP client
+- `markdownify>=1.2.0` - HTML to markdown conversion
+- `rich>=14.0.0` - Terminal formatting (for Jupyter utils)
+
+## Deepagents Framework Patterns
+
+### Built-in Tools (Available by Default)
+- `write_todos` / `read_todos` - Task planning
+- `ls`, `read_file`, `write_file`, `edit_file` - File operations
+- `glob`, `grep` - File searching
+- `execute` - Shell commands (if backend supports)
+- `task` - Sub-agent delegation
+
+### Custom Tools
+- **tavily_search**: Web search using Tavily API, fetches full webpage content
+- **think_tool**: Strategic reflection mechanism for decision-making
+
+### Middleware (Applied Automatically)
+- TodoListMiddleware - Task planning
+- FilesystemMiddleware - File operations
+- SubAgentMiddleware - Task delegation
+- SummarizationMiddleware - Context management
+- AnthropicPromptCachingMiddleware - Cost optimization
+- PatchToolCallsMiddleware - Error handling
+- HumanInTheLoopMiddleware - Approval workflows
+
+### Custom Instructions Guidelines
+- **DO**: Define domain-specific workflows, provide concrete examples, add specialized guidance, define stopping criteria
+- **DON'T**: Re-explain standard tools, duplicate middleware instructions, contradict default instructions
+
+## Research Agent Specific Patterns
+
+### Workflow
+1. Plan with `write_todos`
+2. Save request to `/research_request.md`
+3. Delegate to sub-agents using `task()` tool
+4. Synthesize findings
+5. Write final report to `/final_report.md`
+6. Verify completion
+
+### Delegation Strategy
+- **Default**: 1 sub-agent for most queries
+- **Parallelize**: Only for explicit comparisons or clearly independent aspects
+- **Limits**: Max 3 concurrent sub-agents, max 3 iteration rounds
+
+### Research Limits
+- Simple queries: 2-3 search tool calls
+- Complex queries: Up to 5 search tool calls
+- Always use `think_tool` after each search for reflection
+
+### Report Writing
+- Use clear section headings (##, ###)
+- Write in paragraph form (text-heavy, not just bullets)
+- No self-referential language ("I found...")
+- Professional tone without meta-commentary
+- Citation format: [1], [2], [3] inline, with Sources section at end
+
+## File Naming Conventions
+
+- Python modules: `snake_case.py`
+- Package directories: `snake_case/`
+- Configuration files: `kebab-case.json` (e.g., `langgraph.json`)
+- Markdown files: `kebab-case.md` (e.g., `final_report.md`)
+
+## Environment Variables
+
+Required API keys (set in `.env` or environment):
+- `ANTHROPIC_API_KEY` - For Claude models
+- `GOOGLE_API_KEY` - For Gemini models
+- `TAVILY_API_KEY` - For web search
+- `LANGSMITH_API_KEY` - For LangSmith tracing (optional)
+
+## Testing & Development
+
+- Use Jupyter notebooks for interactive development (`research_agent.ipynb`)
+- Use LangGraph server for deployment (`langgraph dev`)
+- Utils module provides Rich formatting for Jupyter display
+- Enable autoreload in notebooks: `%autoreload 2`
+
+## Important Notes
+
+- **Don't mess up working pieces** - Enhance and fix things carefully
+- Custom instructions are **appended to** default middleware instructions
+- Sub-agents have isolated context windows
+- Large tool results (>20K tokens) are automatically saved to files
+- Conversation history is summarized when exceeding 170K tokens
+
+## When Adding New Features
+
+1. Follow existing patterns for tools, prompts, and agent configuration
+2. Update relevant prompt templates if workflow changes
+3. Maintain separation of concerns (tools, prompts, agent setup)
+4. Test in both Jupyter notebook and LangGraph server modes
+5. Update README.md if adding new quickstarts or major features
+

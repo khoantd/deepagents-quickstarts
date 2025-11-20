@@ -9,6 +9,41 @@
 - **[Documentation](https://docs.langchain.com/oss/python/deepagents/overview)** - Full overview and API reference
 - **[Deepagents Repo](https://github.com/langchain-ai/deepagents)** - Deepagents package 
 
+## 🚀 Quick Start
+
+### Prerequisites
+
+1. **Install uv package manager**:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+2. **Set up API keys** (see individual quickstart READMEs for details)
+
+### Running the Project
+
+**Option 1: Use the development script (Recommended)**
+
+We provide convenient scripts to set up and run the project:
+
+```bash
+# Using bash script (macOS/Linux)
+./run_dev.sh
+
+# Or using Python script (cross-platform)
+python run_dev.py
+```
+
+The script will:
+- ✅ Check if `uv` is installed
+- ✅ Install/update dependencies
+- ✅ Check for API keys (`.env` file or environment variables)
+- ✅ Let you choose between Jupyter Notebook or LangGraph Server
+
+**Option 2: Manual setup**
+
+See individual quickstart READMEs for manual setup instructions.
+
 ## Quickstarts
 
 Here are the currently supported quickstarts:

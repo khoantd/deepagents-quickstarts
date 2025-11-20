@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package threadservice.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+enum ThreadStatus {
+  THREAD_STATUS_UNSPECIFIED = 0;
+  THREAD_STATUS_OPEN = 1;
+  THREAD_STATUS_PAUSED = 2;
+  THREAD_STATUS_CLOSED = 3;
+}
+
+enum ParticipantRole {
+  PARTICIPANT_ROLE_UNSPECIFIED = 0;
+  PARTICIPANT_ROLE_USER = 1;
+  PARTICIPANT_ROLE_AGENT = 2;
+  PARTICIPANT_ROLE_TOOL = 3;
+}
+
+enum MessageKind {
+  MESSAGE_KIND_UNSPECIFIED = 0;
+  MESSAGE_KIND_TEXT = 1;
+  MESSAGE_KIND_RICH = 2;
+  MESSAGE_KIND_TOOL_CALL = 3;
+}
+
+enum AttachmentKind {
+  ATTACHMENT_KIND_UNSPECIFIED = 0;
+  ATTACHMENT_KIND_FILE = 1;
+  ATTACHMENT_KIND_IMAGE = 2;
+  ATTACHMENT_KIND_LINK = 3;
+}
+
+message ParticipantInput {
+  ParticipantRole role = 1;
+  string display_name = 2;
+  google.protobuf.Struct metadata = 3;
+}
+
+message AttachmentInput {
+  AttachmentKind kind = 1;
+  string uri = 2;
+  string content_type = 3;
+  google.protobuf.Struct metadata = 4;
+}
+
+message CreateThreadRequest {
+  string title = 1;
+  string summary = 2;
+  google.protobuf.Struct metadata = 3;
+  repeated ParticipantInput participants = 4;
+}
+
+message CreateThreadResponse {
+  Thread thread = 1;
+}
+
+message AppendMessageRequest {
+  string thread_id = 1;
+  string participant_id = 2;
+  MessageKind kind = 3;
+  string content = 4;
+  google.protobuf.Struct metadata = 5;
+  repeated AttachmentInput attachments = 6;
+}
+
+message AppendMessageResponse {
+  Message message = 1;
+}
+
+message GetThreadRequest {
+  string thread_id = 1;
+}
+
+message GetThreadResponse {
+  Thread thread = 1;
+}
+
+message ListThreadsRequest {
+  uint32 limit = 1;
+  uint32 offset = 2;
+  string participant_id = 3;
+  ThreadStatus status = 4;
+  google.protobuf.Timestamp created_after = 5;
+  google.protobuf.Timestamp created_before = 6;
+}
+
+message ListThreadsResponse {
+  repeated Thread threads = 1;
+  uint64 total = 2;
+}
+
+message StreamThreadMessagesRequest {
+  string thread_id = 1;
+}
+
+message Participant {
+  string id = 1;
+  string thread_id = 2;
+  ParticipantRole role = 3;
+  string display_name = 4;
+  google.protobuf.Struct metadata = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message Attachment {
+  string id = 1;
+  string message_id = 2;
+  AttachmentKind kind = 3;
+  string uri = 4;
+  string content_type = 5;
+  google.protobuf.Struct metadata = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message Message {
+  string id = 1;
+  string thread_id = 2;
+  string participant_id = 3;
+  MessageKind kind = 4;
+  string content = 5;
+  google.protobuf.Struct metadata = 6;
+  google.protobuf.Timestamp created_at = 7;
+  repeated Attachment attachments = 8;
+}
+
+message Thread {
+  string id = 1;
+  string title = 2;
+  ThreadStatus status = 3;
+  string summary = 4;
+  google.protobuf.Struct metadata = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  repeated Participant participants = 8;
+  repeated Message messages = 9;
+}
+
+service ThreadService {
+  rpc CreateThread(CreateThreadRequest) returns (CreateThreadResponse);
+  rpc AppendMessage(AppendMessageRequest) returns (AppendMessageResponse);
+  rpc GetThread(GetThreadRequest) returns (GetThreadResponse);
+  rpc ListThreads(ListThreadsRequest) returns (ListThreadsResponse);
+  rpc StreamThreadMessages(StreamThreadMessagesRequest) returns (stream Message);
+}
