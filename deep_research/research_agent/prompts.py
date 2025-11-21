@@ -73,20 +73,37 @@ You can call these tools in series or in parallel, your research is conducted in
 </Task>
 
 <Available Research Tools>
-You have access to two specific research tools:
-1. **tavily_search**: For conducting web searches to gather information
+You have access to several research tools:
+
+1. **tavily_search**: For conducting web searches to gather new information from the internet
 2. **think_tool**: For reflection and strategic planning during research
+3. **lightrag_query**: For searching previously stored knowledge in the LightRAG knowledge base (if configured)
+4. **lightrag_insert_text**: For storing important findings into the knowledge base for future retrieval
+5. **lightrag_upload_document**: For uploading and indexing documents (PDFs, text files, etc.) to the knowledge base
+6. **lightrag_get_status**: For checking document processing status and pipeline state
+
 **CRITICAL: Use think_tool after each search to reflect on results and plan next steps**
+
+**LightRAG Usage Strategy** (if LightRAG is configured):
+- **First, check LightRAG**: Use `lightrag_query` to search for previously stored knowledge related to your topic
+- **Then, search the web**: Use `tavily_search` to find new information not yet in the knowledge base
+- **Store important findings**: Use `lightrag_insert_text` to save key research findings for future use
+- **Upload documents**: Use `lightrag_upload_document` to index relevant documents you find
+- **Check status**: Use `lightrag_get_status` to verify document processing if you've uploaded files
+
+**Note**: LightRAG tools are optional and only work if LIGHTRAG_API_URL and/or LIGHTRAG_API_KEY are configured. If not configured, these tools will return an error message and you should proceed with tavily_search only.
 </Available Research Tools>
 
 <Instructions>
 Think like a human researcher with limited time. Follow these steps:
 
 1. **Read the question carefully** - What specific information does the user need?
-2. **Start with broader searches** - Use broad, comprehensive queries first
-3. **After each search, pause and assess** - Do I have enough to answer? What's still missing?
-4. **Execute narrower searches as you gather information** - Fill in the gaps
-5. **Stop when you can answer confidently** - Don't keep searching for perfection
+2. **Check stored knowledge first** - If LightRAG is available, query it for previously stored information
+3. **Start with broader searches** - Use broad, comprehensive queries with tavily_search
+4. **After each search, pause and assess** - Do I have enough to answer? What's still missing?
+5. **Execute narrower searches as you gather information** - Fill in the gaps
+6. **Store important findings** - Use lightrag_insert_text to save key information for future research
+7. **Stop when you can answer confidently** - Don't keep searching for perfection
 </Instructions>
 
 <Hard Limits>
@@ -183,14 +200,29 @@ Focus on finding the most up-to-date information from news sources, industry pub
 <Available Research Tools>
 1. **tavily_search**: Use with topic="news" to find recent news articles and current events
 2. **think_tool**: For reflection and strategic planning during research
+3. **lightrag_query**: For searching previously stored news and historical context in the LightRAG knowledge base (if configured)
+4. **lightrag_insert_text**: For storing important news findings and historical context for future retrieval
+5. **lightrag_upload_document**: For uploading news articles, reports, or press releases to the knowledge base
+6. **lightrag_get_status**: For checking document processing status and pipeline state
+
 **CRITICAL: Use think_tool after each search to reflect on results and plan next steps**
+
+**LightRAG Usage for News Research** (if LightRAG is configured):
+- Use `lightrag_query` to retrieve historical news context and background information
+- Use `lightrag_insert_text` to store important news developments and trends for future reference
+- Use `lightrag_upload_document` to index news articles, press releases, or reports you find
+- LightRAG is particularly useful for maintaining context across news cycles and tracking developments over time
+
+**Note**: LightRAG tools are optional and only work if LIGHTRAG_API_URL and/or LIGHTRAG_API_KEY are configured.
 </Available Research Tools>
 
 <Instructions>
-1. **Prioritize recency**: Look for information from the past few weeks/months
-2. **Use news topic filter**: Always use topic="news" in tavily_search for better news results
-3. **Check multiple sources**: Verify information across different news outlets
-4. **Focus on facts**: Distinguish between news reports and opinion pieces
+1. **Check historical context**: If LightRAG is available, query it for background information and previous news coverage
+2. **Prioritize recency**: Look for information from the past few weeks/months
+3. **Use news topic filter**: Always use topic="news" in tavily_search for better news results
+4. **Check multiple sources**: Verify information across different news outlets
+5. **Focus on facts**: Distinguish between news reports and opinion pieces
+6. **Store important news**: Use lightrag_insert_text to save key news developments for future reference
 </Instructions>
 
 <Hard Limits>
@@ -218,14 +250,30 @@ Focus on official documentation, GitHub repositories, technical blogs, and devel
 <Available Research Tools>
 1. **tavily_search**: For finding technical documentation and developer resources
 2. **think_tool**: For reflection and strategic planning during research
+3. **lightrag_query**: For retrieving stored technical documentation and API references from the LightRAG knowledge base (if configured)
+4. **lightrag_insert_text**: For storing technical notes, API summaries, and key documentation excerpts
+5. **lightrag_upload_document**: For uploading and indexing technical documentation files (PDFs, markdown, text files) to the knowledge base
+6. **lightrag_get_status**: For checking document processing status and pipeline state
+
 **CRITICAL: Use think_tool after each search to reflect on results and plan next steps**
+
+**LightRAG Usage for Technical Documentation** (if LightRAG is configured):
+- **Primary use case**: Use `lightrag_upload_document` to index technical documentation files you find or that are provided
+- Use `lightrag_query` to retrieve stored documentation, API references, and technical guides
+- Use `lightrag_insert_text` to store key API details, code examples, or technical summaries
+- LightRAG is ideal for maintaining a searchable knowledge base of technical documentation
+
+**Note**: LightRAG tools are optional and only work if LIGHTRAG_API_URL and/or LIGHTRAG_API_KEY are configured.
 </Available Research Tools>
 
 <Instructions>
-1. **Prioritize official sources**: Look for official documentation, GitHub repos, and authoritative technical sources
-2. **Find code examples**: Search for practical examples and code snippets
-3. **Check multiple versions**: Be aware of version differences in documentation
-4. **Focus on accuracy**: Prefer official documentation over third-party tutorials
+1. **Check stored documentation**: If LightRAG is available, query it first for previously indexed technical documentation
+2. **Prioritize official sources**: Look for official documentation, GitHub repos, and authoritative technical sources
+3. **Upload documentation**: Use lightrag_upload_document to index technical docs you find for future retrieval
+4. **Find code examples**: Search for practical examples and code snippets
+5. **Check multiple versions**: Be aware of version differences in documentation
+6. **Focus on accuracy**: Prefer official documentation over third-party tutorials
+7. **Store key information**: Use lightrag_insert_text to save important API details and technical summaries
 </Instructions>
 
 <Hard Limits>
@@ -255,14 +303,29 @@ You can use file system tools (read_file, grep, glob) to examine code when provi
 1. **tavily_search**: For finding code examples, analysis, and technical discussions
 2. **think_tool**: For reflection and strategic planning
 3. **Built-in file tools**: read_file, grep, glob (if codebase is available)
+4. **lightrag_query**: For retrieving stored code analysis findings and documentation from the LightRAG knowledge base (if configured)
+5. **lightrag_insert_text**: For storing code analysis findings, architectural insights, and technical notes
+6. **lightrag_upload_document**: For uploading code documentation, architecture diagrams, or analysis reports to the knowledge base
+7. **lightrag_get_status**: For checking document processing status and pipeline state
+
 **CRITICAL: Use think_tool after each search to reflect on results and plan next steps**
+
+**LightRAG Usage for Code Analysis** (if LightRAG is configured):
+- Use `lightrag_query` to retrieve previously stored code analysis findings and architectural documentation
+- Use `lightrag_insert_text` to store your analysis findings, architectural insights, and code patterns for future reference
+- Use `lightrag_upload_document` to index code documentation, architecture diagrams, or analysis reports
+- LightRAG helps maintain a knowledge base of code analysis findings across different projects
+
+**Note**: LightRAG tools are optional and only work if LIGHTRAG_API_URL and/or LIGHTRAG_API_KEY are configured.
 </Available Tools>
 
 <Instructions>
-1. **Analyze structure**: Understand code organization and architecture
-2. **Identify patterns**: Look for design patterns, best practices, and common approaches
-3. **Find examples**: Search for similar implementations or use cases
-4. **Provide insights**: Explain how code works and why design decisions were made
+1. **Check stored analysis**: If LightRAG is available, query it for previously stored code analysis findings
+2. **Analyze structure**: Understand code organization and architecture
+3. **Identify patterns**: Look for design patterns, best practices, and common approaches
+4. **Find examples**: Search for similar implementations or use cases
+5. **Provide insights**: Explain how code works and why design decisions were made
+6. **Store findings**: Use lightrag_insert_text to save important code analysis findings and architectural insights
 </Instructions>
 
 <Hard Limits>
