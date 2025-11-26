@@ -4,17 +4,37 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import Enum as PyEnum
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, String, Text, TypeDecorator, func
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum as SAEnum,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    TypeDecorator,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
 
 
-class ThreadStatus(str, Enum):
+def _enum_values(enum_cls: type[PyEnum]) -> list[str]:
+    """Helper to ensure SQLAlchemy stores enum .value strings, not names.
+
+    This keeps the database enum values lowercase (e.g. "open") while still
+    allowing Python code to work with the Enum members.
+    """
+
+    return [member.value for member in enum_cls]  # type: ignore[return-value]
+
+
+class ThreadStatus(str, PyEnum):
     """Enumeration of available thread lifecycle states."""
 
     OPEN = "open"
@@ -66,7 +86,7 @@ class ThreadStatusType(TypeDecorator):
         return value
 
 
-class ParticipantRole(str, Enum):
+class ParticipantRole(str, PyEnum):
     """Identifies a participant's role within a conversation."""
 
     USER = "user"
@@ -116,7 +136,7 @@ class ParticipantRoleType(TypeDecorator):
         return value
 
 
-class MessageKind(str, Enum):
+class MessageKind(str, PyEnum):
     """Classifies message semantics for filtering/analytics."""
 
     TEXT = "text"
@@ -166,7 +186,7 @@ class MessageKindType(TypeDecorator):
         return value
 
 
-class AttachmentKind(str, Enum):
+class AttachmentKind(str, PyEnum):
     """Attachment payload types."""
 
     FILE = "file"
@@ -351,8 +371,13 @@ class Thread(Base):
     )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[ThreadStatus] = mapped_column(
-        ThreadStatusType(),
+        SAEnum(
+            ThreadStatus,
+            name="thread_status_enum",
+            values_callable=_enum_values,
+        ),
         default=ThreadStatus.OPEN,
+        nullable=False,
     )
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     custom_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB, default=dict)
@@ -395,8 +420,13 @@ class Participant(Base):
         nullable=False,
     )
     role: Mapped[ParticipantRole] = mapped_column(
-        ParticipantRoleType(),
+        SAEnum(
+            ParticipantRole,
+            name="participant_role_enum",
+            values_callable=_enum_values,
+        ),
         default=ParticipantRole.USER,
+        nullable=False,
     )
     display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     custom_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB, default=dict)
@@ -429,8 +459,13 @@ class Message(Base):
         nullable=True,
     )
     kind: Mapped[MessageKind] = mapped_column(
-        MessageKindType(),
+        SAEnum(
+            MessageKind,
+            name="message_kind_enum",
+            values_callable=_enum_values,
+        ),
         default=MessageKind.TEXT,
+        nullable=False,
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     custom_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB, default=dict)
@@ -463,8 +498,13 @@ class MessageAttachment(Base):
         nullable=False,
     )
     kind: Mapped[AttachmentKind] = mapped_column(
-        AttachmentKindType(),
+        SAEnum(
+            AttachmentKind,
+            name="attachment_kind_enum",
+            values_callable=_enum_values,
+        ),
         default=AttachmentKind.FILE,
+        nullable=False,
     )
     uri: Mapped[str] = mapped_column(Text, nullable=False)
     content_type: Mapped[str | None] = mapped_column(String(255), nullable=True)

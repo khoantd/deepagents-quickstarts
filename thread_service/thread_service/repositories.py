@@ -510,3 +510,43 @@ async def append_message(
     await session.commit()
     await session.refresh(message, attribute_names=["attachments"])
     return message
+
+
+async def update_thread_metadata(
+    session: AsyncSession,
+    *,
+    thread_id: UUID,
+    user_id: UUID,
+    metadata_updates: dict[str, Any],
+) -> Thread:
+    """Update thread metadata by merging new metadata with existing metadata.
+
+    Args:
+        session: Database session
+        thread_id: Thread UUID
+        user_id: User UUID (must own the thread)
+        metadata_updates: Dictionary of metadata keys to update/merge
+
+    Returns:
+        Updated Thread instance
+
+    Raises:
+        NoResultFound: If thread doesn't exist or user doesn't own it
+    """
+    thread = await get_thread(session, thread_id, user_id)
+    
+    # Merge new metadata with existing metadata
+    existing_metadata = thread.custom_metadata or {}
+    updated_metadata = {**existing_metadata, **metadata_updates}
+    
+    thread.custom_metadata = updated_metadata
+    await session.commit()
+    # Refresh with all scalar attributes and relationships to ensure they're loaded in async context
+    # This is critical to prevent greenlet errors when accessing attributes later
+    await session.refresh(
+        thread,
+        attribute_names=["id", "title", "status", "summary", "created_at", "updated_at", "custom_metadata", "participants", "messages"],
+    )
+    # Access updated_at while still in async context to materialize it
+    _ = thread.updated_at
+    return thread

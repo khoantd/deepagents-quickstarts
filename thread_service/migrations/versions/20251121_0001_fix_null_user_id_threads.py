@@ -46,12 +46,13 @@ def upgrade() -> None:
     
     if first_user_id:
         # Assign NULL user_id threads to the first user
-        connection.execute(
+        update_result = connection.execute(
             text("UPDATE threads SET user_id = :user_id WHERE user_id IS NULL"),
             {"user_id": str(first_user_id)},
         )
         connection.commit()
-        print(f"Assigned {null_thread_count} threads to user {first_user_id}")
+        updated_count = update_result.rowcount if hasattr(update_result, 'rowcount') else null_thread_count
+        print(f"Assigned {updated_count} threads to user {first_user_id}")
     else:
         # No users exist - delete orphaned threads
         # This is safer than leaving them orphaned

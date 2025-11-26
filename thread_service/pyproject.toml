@@ -18,6 +18,10 @@ dependencies = [
     "httpx>=0.28.1",
     "greenlet>=3.2.4",
     "passlib[bcrypt]>=1.7.4",
+    # Pin bcrypt to a version compatible with passlib's bcrypt handler.
+    # Newer bcrypt releases raise ValueError during passlib's internal self-test
+    # when using >72-byte passwords, which breaks backend initialization.
+    "bcrypt>=3.2,<4.0.0",
     "python-jose[cryptography]>=3.3.0",
     "python-multipart>=0.0.9",
 ]

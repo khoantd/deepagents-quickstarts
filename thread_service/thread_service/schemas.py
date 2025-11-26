@@ -114,6 +114,14 @@ class ThreadRead(MetadataMixin):
     messages: list[MessageRead] = Field(default_factory=list)
 
 
+class ThreadUpdate(MetadataMixin):
+    """Schema for updating thread metadata."""
+
+    title: str | None = None
+    summary: str | None = None
+    status: ThreadStatus | None = None
+
+
 class ThreadListResponse(BaseModel):
     threads: list[ThreadRead]
     total: int

@@ -13,8 +13,8 @@ from sqlalchemy.exc import NoResultFound
 from ..db import get_session
 from ..middleware import get_current_user
 from ..models import ThreadStatus, User
-from ..repositories import append_message, create_thread, get_thread, list_threads
-from ..schemas import MessageCreate, MessageRead, ThreadCreate, ThreadListResponse, ThreadRead
+from ..repositories import append_message, create_thread, get_thread, list_threads, update_thread_metadata
+from ..schemas import MessageCreate, MessageRead, ThreadCreate, ThreadListResponse, ThreadRead, ThreadUpdate
 
 router = APIRouter(prefix="/threads", tags=["Threads"])
 
@@ -44,6 +44,26 @@ def _normalize_metadata(obj: Any) -> dict[str, Any]:
     return {}
 
 
+def _materialize_thread_attributes(thread: Any) -> None:
+    """Access all thread scalar attributes while still in async context to prevent greenlet errors.
+    
+    This ensures all scalar attributes (especially updated_at) are loaded before Pydantic 
+    validation happens outside the async context. This is critical for SQLAlchemy async models 
+    where attributes must be accessed within the async greenlet context.
+    
+    Relationships are assumed to be already loaded via selectinload in repository functions.
+    """
+    # Access all scalar attributes that Pydantic will need
+    # This materializes them in the current async context before we leave it
+    _ = thread.id
+    _ = thread.title
+    _ = thread.status
+    _ = thread.summary
+    _ = thread.created_at
+    _ = thread.updated_at  # This is the critical one causing the greenlet error
+    _ = thread.custom_metadata
+
+
 @router.post("", response_model=ThreadRead, status_code=status.HTTP_201_CREATED)
 async def create_thread_endpoint(
     payload: ThreadCreate,
@@ -53,6 +73,9 @@ async def create_thread_endpoint(
     """Create a new thread with optional participants."""
 
     thread = await create_thread(session, payload, user_id=current_user.id)
+    
+    # Materialize all attributes while still in async context
+    _materialize_thread_attributes(thread)
     
     # Normalize metadata fields before validation
     if hasattr(thread, "custom_metadata"):
@@ -176,11 +199,38 @@ async def get_thread_endpoint(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ThreadRead:
     """Return a single thread by identifier (user-scoped)."""
+    import logging
+    
+    logger = logging.getLogger(__name__)
 
     try:
         thread = await get_thread(session, thread_id, user_id=current_user.id)
-    except NoResultFound as exc:  # pragma: no cover - FastAPI handles detail
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found") from exc
+    except NoResultFound as exc:
+        # Log for debugging - check if thread exists but belongs to different user
+        from sqlalchemy import select
+        from ..models import Thread
+        check_stmt = select(Thread.id, Thread.user_id).where(Thread.id == thread_id)
+        result = await session.execute(check_stmt)
+        thread_info = result.first()
+        
+        if thread_info:
+            logger.debug(
+                "Thread %s exists but belongs to user %s, requested by user %s",
+                thread_id,
+                thread_info.user_id,
+                current_user.id,
+            )
+        else:
+            logger.debug("Thread %s does not exist, requested by user %s", thread_id, current_user.id)
+        
+        # Return 404 without leaking information about thread existence
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Thread not found",
+        ) from exc
+    
+    # Materialize all attributes while still in async context
+    _materialize_thread_attributes(thread)
     
     # Normalize metadata fields before validation
     if hasattr(thread, "custom_metadata"):
@@ -198,6 +248,47 @@ async def get_thread_endpoint(
                     if hasattr(attachment, "custom_metadata"):
                         attachment.custom_metadata = _normalize_metadata(attachment.custom_metadata)
     
+    return ThreadRead.model_validate(thread, from_attributes=True)
+
+
+@router.patch("/{thread_id}", response_model=ThreadRead)
+async def update_thread_endpoint(
+    thread_id: UUID,
+    payload: ThreadUpdate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ThreadRead:
+    """Update thread metadata (user-scoped)."""
+
+    try:
+        thread = await update_thread_metadata(
+            session,
+            thread_id=thread_id,
+            user_id=current_user.id,
+            metadata_updates=payload.metadata,
+        )
+    except NoResultFound as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found") from exc
+
+    # Materialize all attributes while still in async context
+    _materialize_thread_attributes(thread)
+    
+    # Normalize metadata fields before validation
+    if hasattr(thread, "custom_metadata"):
+        thread.custom_metadata = _normalize_metadata(thread.custom_metadata)
+    if hasattr(thread, "participants"):
+        for participant in thread.participants:
+            if hasattr(participant, "custom_metadata"):
+                participant.custom_metadata = _normalize_metadata(participant.custom_metadata)
+    if hasattr(thread, "messages"):
+        for message in thread.messages:
+            if hasattr(message, "custom_metadata"):
+                message.custom_metadata = _normalize_metadata(message.custom_metadata)
+            if hasattr(message, "attachments"):
+                for attachment in message.attachments:
+                    if hasattr(attachment, "custom_metadata"):
+                        attachment.custom_metadata = _normalize_metadata(attachment.custom_metadata)
+
     return ThreadRead.model_validate(thread, from_attributes=True)
 
 
