@@ -190,6 +190,15 @@ else:
     model = init_chat_model(model="openai:gpt-4o", temperature=0.0)
     logger.info("Initialized model via direct provider: openai:gpt-4o")
 
+# Note on SummarizationMiddleware:
+# The default SummarizationMiddleware triggers at 170K tokens, which exceeds the 128K token limit
+# for some models (e.g., GPT-4o). If you encounter context_length_exceeded errors, consider:
+# 1. Starting a new thread when conversations get very long
+# 2. The middleware will automatically summarize when it detects the limit
+# 3. Error handling in the frontend will show a user-friendly message if this occurs
+# To customize the threshold, you would need to override all default middleware, which is complex.
+# Future versions of deepagents may support configuring middleware thresholds directly.
+
 # Create the agent with multiple sub-agents
 # Add or remove agents from this list to customize available sub-agents
 agent = create_deep_agent(
