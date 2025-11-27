@@ -11,7 +11,13 @@ from google.protobuf.json_format import MessageToDict, ParseDict
 
 from research_service.proto import research_service_pb2 as pb2
 from research_service.proto import research_service_pb2_grpc as pb2_grpc
-from research_service.schemas import ResearchEventType, ResearchRequest, ResearchResponse
+from research_service.schemas import (
+    ResearchEventType,
+    ResearchRequest,
+    ResearchResponse,
+    SubAgent,
+    SubAgentsListResponse,
+)
 from research_service.service import ResearchService
 
 
@@ -85,6 +91,24 @@ def _response_to_proto(response: ResearchResponse) -> pb2.ResearchResponse:
     )
 
 
+def _sub_agent_to_proto(sub_agent: SubAgent) -> pb2.SubAgent:
+    """Convert SubAgent schema to protobuf message."""
+    return pb2.SubAgent(
+        name=sub_agent.name,
+        description=sub_agent.description,
+        tools=sub_agent.tools,
+    )
+
+
+def _sub_agents_list_response_to_proto(
+    response: SubAgentsListResponse,
+) -> pb2.ListSubAgentsResponse:
+    """Convert SubAgentsListResponse schema to protobuf message."""
+    return pb2.ListSubAgentsResponse(
+        sub_agents=[_sub_agent_to_proto(sub_agent) for sub_agent in response.sub_agents]
+    )
+
+
 def get_research_service() -> ResearchService:
     """Get the research service instance.
 
@@ -143,6 +167,25 @@ class ResearchServiceServicer(pb2_grpc.ResearchServiceServicer):
                 yield _event_to_proto(event)
         except Exception as e:
             await context.abort(grpc.StatusCode.INTERNAL, f"Research stream failed: {str(e)}")
+
+    async def ListSubAgents(self, request, context):  # type: ignore[override]
+        """Get list of available sub-agents.
+
+        Args:
+            request: ListSubAgentsRequest protobuf message
+            context: gRPC context
+
+        Returns:
+            ListSubAgentsResponse protobuf message
+        """
+        try:
+            service = get_research_service()
+            response = service.get_sub_agents()
+            return _sub_agents_list_response_to_proto(response)
+        except Exception as e:
+            await context.abort(
+                grpc.StatusCode.INTERNAL, f"Failed to retrieve sub-agents: {str(e)}"
+            )
 
 
 def build_grpc_server() -> grpc.aio.Server:

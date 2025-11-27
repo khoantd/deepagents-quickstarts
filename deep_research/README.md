@@ -27,6 +27,11 @@ export TAVILY_API_KEY=your_tavily_api_key_here        # Required for web search 
 # Optional: LightRAG knowledge base integration
 export LIGHTRAG_API_URL=https://lightrag-latest-xyu3.onrender.com  # LightRAG API URL (defaults to this if not set)
 export LIGHTRAG_API_KEY=your_lightrag_api_key_here     # Optional: API key for LightRAG authentication
+
+# Optional: LiteLLM Proxy integration
+export LITELLM_API_BASE=http://localhost:4000         # LiteLLM proxy server URL (e.g., http://localhost:4000)
+export LITELLM_API_KEY=your_litellm_api_key_here      # Optional: API key for LiteLLM proxy authentication
+export LITELLM_MODEL=gpt-4o                            # Optional: Model name to use via LiteLLM proxy (defaults to gpt-4o)
 ```
 
 ## Usage Options
@@ -84,7 +89,9 @@ This provides a user-friendly chat interface and visualization of files in state
 
 ### Custom Model
 
-By default, `deepagents` uses `"claude-sonnet-4-5-20250929"`. You can customize this by passing any [LangChain model object](https://python.langchain.com/docs/integrations/chat/). See the Deepagents package [README](https://github.com/langchain-ai/deepagents?tab=readme-ov-file#model) for more details.
+By default, the research agent uses `"openai:gpt-4o"` when running directly, or `"claude-sonnet-4-5-20250929"` in the deepagents package. You can customize this by passing any [LangChain model object](https://python.langchain.com/docs/integrations/chat/). See the Deepagents package [README](https://github.com/langchain-ai/deepagents?tab=readme-ov-file#model) for more details.
+
+#### Direct Provider Integration
 
 ```python
 from langchain.chat_models import init_chat_model
@@ -97,10 +104,72 @@ model = init_chat_model(model="anthropic:claude-sonnet-4-5-20250929", temperatur
 from langchain_google_genai import ChatGoogleGenerativeAI
 model = ChatGoogleGenerativeAI(model="gemini-3-pro-preview")
 
+# Using OpenAI
+model = init_chat_model(model="openai:gpt-4o", temperature=0.0)
+
 agent = create_deep_agent(
     model=model,
 )
 ```
+
+#### LiteLLM Proxy Integration
+
+You can also use [LiteLLM Proxy](https://docs.litellm.ai/docs/proxy/intro) to route LLM requests through a unified proxy interface. This is useful for:
+- Managing multiple LLM providers through a single interface
+- Cost tracking and monitoring
+- Load balancing across providers
+- Rate limiting and request management
+
+To use LiteLLM proxy, set the following environment variables:
+
+```bash
+export LITELLM_API_BASE=http://localhost:4000    # Your LiteLLM proxy server URL
+export LITELLM_API_KEY=your_litellm_api_key      # Optional: API key for authentication
+export LITELLM_MODEL=gpt-4o                      # Optional: Model name (defaults to gpt-4o)
+```
+
+The agent will automatically detect `LITELLM_API_BASE` and route all LLM requests through the proxy. If `LITELLM_API_BASE` is not set, the agent will use direct provider integration (backward compatible).
+
+**Setting up LiteLLM Proxy:**
+
+1. Install LiteLLM with proxy support:
+   ```bash
+   pip install 'litellm[proxy]'
+   ```
+
+2. Create a `config.yaml` file to configure your models:
+   ```yaml
+   model_list:
+     - model_name: "gpt-4o"
+       litellm_params:
+         model: "openai/gpt-4o"
+         api_key: "your-openai-api-key"
+     - model_name: "claude-sonnet-4-5"
+       litellm_params:
+         model: "anthropic/claude-sonnet-4-5-20250929"
+         api_key: "your-anthropic-api-key"
+   ```
+
+3. Start the LiteLLM proxy server:
+   ```bash
+   litellm --config config.yaml --port 4000
+   ```
+
+4. Configure the research agent to use the proxy by setting `LITELLM_API_BASE` environment variable.
+
+**When to use LiteLLM Proxy vs Direct Providers:**
+
+- **Use LiteLLM Proxy** when you need:
+  - Unified management of multiple LLM providers
+  - Cost tracking and analytics
+  - Load balancing and failover
+  - Rate limiting and request throttling
+  - Centralized API key management
+
+- **Use Direct Providers** when you need:
+  - Simpler setup with a single provider
+  - Direct API access without proxy overhead
+  - Provider-specific features not available through proxy
 
 ### Custom Instructions
 

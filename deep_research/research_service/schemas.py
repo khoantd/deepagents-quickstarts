@@ -78,3 +78,17 @@ class ResearchResponse(BaseModel):
     )
     completed_at: datetime = Field(default_factory=datetime.now, description="Completion timestamp")
 
+
+class SubAgent(BaseModel):
+    """Schema for a sub-agent definition."""
+
+    name: str = Field(..., description="Name of the sub-agent")
+    description: str = Field(..., description="Description of what the sub-agent does")
+    tools: list[str] = Field(..., description="List of tool names available to this sub-agent")
+
+
+class SubAgentsListResponse(BaseModel):
+    """Response schema for listing available sub-agents."""
+
+    sub_agents: list[SubAgent] = Field(..., description="List of available sub-agents")
+

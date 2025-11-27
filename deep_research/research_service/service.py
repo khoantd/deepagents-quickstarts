@@ -2,12 +2,20 @@
 
 import asyncio
 import logging
+import sys
 from pathlib import Path
 from typing import AsyncIterator
 
 from langchain_core.messages import HumanMessage
 
-from research_service.schemas import ResearchEvent, ResearchEventType, ResearchRequest, ResearchResponse
+from research_service.schemas import (
+    ResearchEvent,
+    ResearchEventType,
+    ResearchRequest,
+    ResearchResponse,
+    SubAgent,
+    SubAgentsListResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +50,8 @@ class ResearchService:
         )
 
         try:
-            # Prepare agent input
-            messages = [HumanMessage(content=request.query)]
+            # Prepare agent input - LangGraph expects messages wrapped in a dict
+            agent_input = {"messages": [HumanMessage(content=request.query)]}
 
             # Configure agent if custom limits provided
             config = {}
@@ -54,7 +62,7 @@ class ResearchService:
 
             # Stream agent events
             async for event in self.agent.astream_events(
-                messages,
+                agent_input,
                 config=config if config else None,
                 version="v2",
             ):
@@ -191,4 +199,22 @@ class ResearchService:
                 final_message=f"Error: {str(e)}",
                 metadata={"error": str(e)},
             )
+
+    def get_sub_agents(self) -> SubAgentsListResponse:
+        """Get list of available sub-agents.
+
+        Returns:
+            SubAgentsListResponse with list of available sub-agents
+        """
+        # Import here to avoid circular imports
+        parent_dir = Path(__file__).resolve().parent.parent.parent
+        if str(parent_dir) not in sys.path:
+            sys.path.insert(0, str(parent_dir))
+
+        from agent import get_sub_agents as get_sub_agents_from_agent
+
+        sub_agents_data = get_sub_agents_from_agent()
+        sub_agents = [SubAgent(**data) for data in sub_agents_data]
+
+        return SubAgentsListResponse(sub_agents=sub_agents)
 

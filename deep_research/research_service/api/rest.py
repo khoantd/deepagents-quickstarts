@@ -5,11 +5,18 @@ from __future__ import annotations
 import json
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sse_starlette.sse import EventSourceResponse
 
-from research_service.schemas import ResearchEvent, ResearchRequest, ResearchResponse
+from research_service.auth import get_current_user
+from research_service.auth.schemas import TokenData
+from research_service.schemas import (
+    ResearchEvent,
+    ResearchRequest,
+    ResearchResponse,
+    SubAgentsListResponse,
+)
 from research_service.service import ResearchService
 
 logger = logging.getLogger(__name__)
@@ -46,6 +53,7 @@ def get_research_service() -> ResearchService:
 )
 async def research_endpoint(
     request: ResearchRequest,
+    _current_user: TokenData = Depends(get_current_user),
 ) -> ResearchResponse:
     """Execute research synchronously and return final result.
 
@@ -73,6 +81,7 @@ async def research_endpoint(
 )
 async def research_stream_endpoint(
     request: ResearchRequest,
+    _current_user: TokenData = Depends(get_current_user),
 ) -> EventSourceResponse:
     """Execute research and stream events via Server-Sent Events (SSE).
 
@@ -111,6 +120,32 @@ async def research_stream_endpoint(
             }
 
     return EventSourceResponse(event_generator())
+
+
+@router.get(
+    "/sub-agents",
+    response_model=SubAgentsListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List Available Sub-Agents",
+    response_description="List of available sub-agents with their names, descriptions, and tools.",
+)
+async def list_sub_agents(
+    _current_user: TokenData = Depends(get_current_user),
+) -> SubAgentsListResponse:
+    """Get list of available sub-agents.
+
+    Returns:
+        SubAgentsListResponse with list of available sub-agents
+    """
+    try:
+        service = get_research_service()
+        return service.get_sub_agents()
+    except Exception as e:
+        logger.exception("Error in list sub-agents endpoint")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve sub-agents: {str(e)}",
+        ) from e
 
 
 @router.get("/healthz", tags=["Health"])

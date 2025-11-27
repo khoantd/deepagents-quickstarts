@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # LangGraph Server Service
+  langgraph:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODE: langgraph
+    image: deep-research:langgraph
+    container_name: deep-research-langgraph
+    ports:
+      - "8123:8123"
+    environment:
+      - SERVICE_MODE=langgraph
+      # API Keys - set these in .env file or override here
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LIGHTRAG_API_URL=${LIGHTRAG_API_URL:-https://lightrag-latest-xyu3.onrender.com}
+      - LIGHTRAG_API_KEY=${LIGHTRAG_API_KEY:-}
+      # Optional: LiteLLM Proxy configuration
+      - LITELLM_API_BASE=${LITELLM_API_BASE:-}
+      - LITELLM_API_KEY=${LITELLM_API_KEY:-}
+      - LITELLM_MODEL=${LITELLM_MODEL:-}
+    volumes:
+      # Mount .env file if it exists (optional, for development)
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # FastAPI/gRPC Service
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODE: fastapi
+    image: deep-research:fastapi
+    container_name: deep-research-fastapi
+    ports:
+      - "8081:8081"  # FastAPI HTTP
+      - "50052:50052"  # gRPC
+    environment:
+      - SERVICE_MODE=fastapi
+      # API Keys
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LIGHTRAG_API_URL=${LIGHTRAG_API_URL:-https://lightrag-latest-xyu3.onrender.com}
+      - LIGHTRAG_API_KEY=${LIGHTRAG_API_KEY:-}
+      # Optional: LiteLLM Proxy configuration
+      - LITELLM_API_BASE=${LITELLM_API_BASE:-}
+      - LITELLM_API_KEY=${LITELLM_API_KEY:-}
+      - LITELLM_MODEL=${LITELLM_MODEL:-}
+      # Service settings
+      - RESEARCH_SERVICE_ENV=${RESEARCH_SERVICE_ENV:-production}
+      - RESEARCH_SERVICE_HTTP_HOST=0.0.0.0
+      - RESEARCH_SERVICE_HTTP_PORT=8081
+      - RESEARCH_SERVICE_GRPC_HOST=0.0.0.0
+      - RESEARCH_SERVICE_GRPC_PORT=50052
+      - RESEARCH_SERVICE_RELOAD=false
+    volumes:
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Combined Service (both LangGraph and FastAPI)
+  combined:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_MODE: both
+    image: deep-research:combined
+    container_name: deep-research-combined
+    ports:
+      - "8123:8123"  # LangGraph
+      - "8081:8081"  # FastAPI HTTP
+      - "50052:50052"  # gRPC
+    environment:
+      - SERVICE_MODE=both
+      # API Keys
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LIGHTRAG_API_URL=${LIGHTRAG_API_URL:-https://lightrag-latest-xyu3.onrender.com}
+      - LIGHTRAG_API_KEY=${LIGHTRAG_API_KEY:-}
+      # Optional: LiteLLM Proxy configuration
+      - LITELLM_API_BASE=${LITELLM_API_BASE:-}
+      - LITELLM_API_KEY=${LITELLM_API_KEY:-}
+      - LITELLM_MODEL=${LITELLM_MODEL:-}
+      # Service settings
+      - RESEARCH_SERVICE_ENV=${RESEARCH_SERVICE_ENV:-production}
+      - RESEARCH_SERVICE_HTTP_HOST=0.0.0.0
+      - RESEARCH_SERVICE_HTTP_PORT=8081
+      - RESEARCH_SERVICE_GRPC_HOST=0.0.0.0
+      - RESEARCH_SERVICE_GRPC_PORT=50052
+      - RESEARCH_SERVICE_RELOAD=false
+    volumes:
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+

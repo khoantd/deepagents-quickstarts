@@ -1,0 +1,36 @@
+version: '3.8'
+
+# Development override for docker-compose.yml
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  langgraph:
+    volumes:
+      # Mount source code for hot-reload (if supported)
+      - ./research_agent:/app/research_agent:ro
+      - ./research_service:/app/research_service:ro
+      - ./agent.py:/app/agent.py:ro
+      - ./.env:/app/.env:ro
+    environment:
+      - RESEARCH_SERVICE_RELOAD=true
+
+  fastapi:
+    volumes:
+      # Mount source code for development
+      - ./research_service:/app/research_service
+      - ./.env:/app/.env:ro
+    environment:
+      - RESEARCH_SERVICE_RELOAD=true
+      - RESEARCH_SERVICE_ENV=local
+
+  combined:
+    volumes:
+      # Mount source code for development
+      - ./research_agent:/app/research_agent:ro
+      - ./research_service:/app/research_service
+      - ./agent.py:/app/agent.py:ro
+      - ./.env:/app/.env:ro
+    environment:
+      - RESEARCH_SERVICE_RELOAD=true
+      - RESEARCH_SERVICE_ENV=local
+

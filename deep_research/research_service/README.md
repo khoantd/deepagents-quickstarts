@@ -27,10 +27,21 @@ uv run python -m grpc_tools.protoc -I proto --python_out=proto --grpc_python_out
 
 3. Set environment variables (in `.env` file):
 ```bash
+# LLM and tool API keys
 ANTHROPIC_API_KEY=your_key
 TAVILY_API_KEY=your_key
 OPENAI_API_KEY=your_key  # if using OpenAI models
+
+# JWT Authentication (Required)
+JWT_SECRET_KEY=your-very-secure-secret-key-here-minimum-32-characters
+API_KEYS=api-key-1,api-key-2,api-key-3  # Comma-separated list of valid API keys
+
+# Optional JWT settings
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30  # Token expiration in minutes (default: 30)
+JWT_ALGORITHM=HS256  # JWT algorithm (default: HS256)
 ```
+
+**Note**: See [JWT Setup Guide](../docs/jwt_setup.md) for detailed authentication setup instructions.
 
 ## Running the Service
 
@@ -47,11 +58,30 @@ The service will start:
 
 ## API Usage
 
+### Authentication
+
+All endpoints except `/research/healthz` require JWT authentication. See the [JWT Setup Guide](../docs/jwt_setup.md) for detailed instructions.
+
+**Quick Start:**
+
+1. Get a JWT token using an API key:
+```bash
+curl -X POST http://localhost:8081/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"api_key": "api-key-1"}'
+```
+
+2. Use the token in the `Authorization` header for all protected endpoints:
+```bash
+TOKEN="your-jwt-token-here"
+```
+
 ### REST API
 
 #### Synchronous Research
 ```bash
 curl -X POST http://localhost:8081/research \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "query": "What is quantum computing?",
@@ -63,13 +93,20 @@ curl -X POST http://localhost:8081/research \
 #### Streaming Research (SSE)
 ```bash
 curl -X POST http://localhost:8081/research/stream \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "query": "What is quantum computing?"
   }'
 ```
 
-#### Health Check
+#### List Sub-Agents
+```bash
+curl -X GET http://localhost:8081/research/sub-agents \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+#### Health Check (Public - No Authentication Required)
 ```bash
 curl http://localhost:8081/research/healthz
 ```
@@ -129,12 +166,23 @@ See the generated `research_service_pb2_grpc.py` for client examples. The servic
 ## Configuration
 
 Environment variables:
+
+### Service Configuration
 - `RESEARCH_SERVICE_HTTP_HOST`: HTTP server host (default: `0.0.0.0`)
 - `RESEARCH_SERVICE_HTTP_PORT`: HTTP server port (default: `8081`)
 - `RESEARCH_SERVICE_GRPC_HOST`: gRPC server host (default: `0.0.0.0`)
 - `RESEARCH_SERVICE_GRPC_PORT`: gRPC server port (default: `50052`)
 - `RESEARCH_SERVICE_RELOAD`: Enable auto-reload (default: `true`)
 - `RESEARCH_SERVICE_ENV`: Environment (local/staging/production, default: `local`)
+
+### JWT Authentication (Required)
+- `JWT_SECRET_KEY`: Secret key for signing JWT tokens (required)
+- `API_KEYS`: Comma-separated list of valid API keys (required)
+- `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration in minutes (optional, default: `30`)
+- `JWT_ALGORITHM`: JWT algorithm (optional, default: `HS256`)
+- `JWT_ISSUER`: Optional issuer claim for tokens
+
+See [JWT Setup Guide](../docs/jwt_setup.md) for complete authentication documentation.
 
 ## Notes
 

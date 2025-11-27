@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from research_service.api import rest
+from research_service.api import auth, rest
 from research_service.settings import get_settings
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,61 @@ def create_app() -> FastAPI:
         },
         lifespan=lifespan,
     )
+
+    # Include routers
+    fastapi_app.include_router(auth.router)
     fastapi_app.include_router(rest.router)
+
+    # Configure OpenAPI security schema
+    fastapi_app.openapi_schema = None  # Force regeneration
+
+    def custom_openapi():
+        """Generate custom OpenAPI schema with security definitions."""
+        if fastapi_app.openapi_schema:
+            return fastapi_app.openapi_schema
+
+        from fastapi.openapi.utils import get_openapi
+
+        openapi_schema = get_openapi(
+            title=fastapi_app.title,
+            version=fastapi_app.version,
+            description=fastapi_app.description,
+            routes=fastapi_app.routes,
+        )
+
+        # Add security scheme
+        openapi_schema["components"]["securitySchemes"] = {
+            "HTTPBearer": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "Enter JWT token obtained from /auth/token endpoint",
+            }
+        }
+
+        # Public endpoints that don't require authentication
+        public_endpoints = {
+            "/auth/token",
+            "/research/healthz",
+        }
+
+        # Apply security requirements to protected endpoints
+        security_requirement = [{"HTTPBearer": []}]
+        paths = openapi_schema.get("paths", {})
+        for path, methods in paths.items():
+            # Skip public endpoints
+            if path in public_endpoints:
+                continue
+
+            # Apply security to all methods in this path
+            for method in methods.values():
+                if isinstance(method, dict):
+                    method["security"] = security_requirement
+
+        fastapi_app.openapi_schema = openapi_schema
+        return fastapi_app.openapi_schema
+
+    fastapi_app.openapi = custom_openapi
 
     @fastapi_app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:

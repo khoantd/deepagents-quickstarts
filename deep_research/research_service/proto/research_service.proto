@@ -40,8 +40,23 @@ message ResearchResponse {
   google.protobuf.Timestamp completed_at = 5;
 }
 
+message SubAgent {
+  string name = 1;
+  string description = 2;
+  repeated string tools = 3;
+}
+
+message ListSubAgentsRequest {
+  // Empty request message
+}
+
+message ListSubAgentsResponse {
+  repeated SubAgent sub_agents = 1;
+}
+
 service ResearchService {
   rpc Research(ResearchRequest) returns (ResearchResponse);
   rpc ResearchStream(ResearchRequest) returns (stream ResearchEvent);
+  rpc ListSubAgents(ListSubAgentsRequest) returns (ListSubAgentsResponse);
 }
 

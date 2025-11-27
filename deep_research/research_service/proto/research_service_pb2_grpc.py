@@ -44,6 +44,11 @@ class ResearchServiceStub(object):
                 request_serializer=research__service__pb2.ResearchRequest.SerializeToString,
                 response_deserializer=research__service__pb2.ResearchEvent.FromString,
                 _registered_method=True)
+        self.ListSubAgents = channel.unary_unary(
+                '/researchservice.v1.ResearchService/ListSubAgents',
+                request_serializer=research__service__pb2.ListSubAgentsRequest.SerializeToString,
+                response_deserializer=research__service__pb2.ListSubAgentsResponse.FromString,
+                _registered_method=True)
 
 
 class ResearchServiceServicer(object):
@@ -61,6 +66,12 @@ class ResearchServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListSubAgents(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ResearchServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -73,6 +84,11 @@ def add_ResearchServiceServicer_to_server(servicer, server):
                     servicer.ResearchStream,
                     request_deserializer=research__service__pb2.ResearchRequest.FromString,
                     response_serializer=research__service__pb2.ResearchEvent.SerializeToString,
+            ),
+            'ListSubAgents': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListSubAgents,
+                    request_deserializer=research__service__pb2.ListSubAgentsRequest.FromString,
+                    response_serializer=research__service__pb2.ListSubAgentsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -129,6 +145,33 @@ class ResearchService(object):
             '/researchservice.v1.ResearchService/ResearchStream',
             research__service__pb2.ResearchRequest.SerializeToString,
             research__service__pb2.ResearchEvent.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListSubAgents(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/researchservice.v1.ResearchService/ListSubAgents',
+            research__service__pb2.ListSubAgentsRequest.SerializeToString,
+            research__service__pb2.ListSubAgentsResponse.FromString,
             options,
             channel_credentials,
             insecure,
