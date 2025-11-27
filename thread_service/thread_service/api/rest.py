@@ -214,19 +214,31 @@ async def get_thread_endpoint(
         thread_info = result.first()
         
         if thread_info:
-            logger.debug(
+            logger.info(
                 "Thread %s exists but belongs to user %s, requested by user %s",
                 thread_id,
                 thread_info.user_id,
                 current_user.id,
             )
         else:
-            logger.debug("Thread %s does not exist, requested by user %s", thread_id, current_user.id)
+            logger.info("Thread %s does not exist, requested by user %s", thread_id, current_user.id)
         
         # Return 404 without leaking information about thread existence
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Thread not found",
+        ) from exc
+    except Exception as exc:
+        # Log unexpected errors for debugging
+        logger.exception(
+            "Unexpected error fetching thread %s for user %s: %s",
+            thread_id,
+            current_user.id,
+            exc,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch thread",
         ) from exc
     
     # Materialize all attributes while still in async context
@@ -258,7 +270,7 @@ async def update_thread_endpoint(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ThreadRead:
-    """Update thread metadata (user-scoped)."""
+    """Update thread metadata, title, summary, and/or status (user-scoped)."""
 
     try:
         thread = await update_thread_metadata(
@@ -266,6 +278,9 @@ async def update_thread_endpoint(
             thread_id=thread_id,
             user_id=current_user.id,
             metadata_updates=payload.metadata,
+            title=payload.title,
+            summary=payload.summary,
+            status=payload.status,
         )
     except NoResultFound as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found") from exc

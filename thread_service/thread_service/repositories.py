@@ -517,15 +517,21 @@ async def update_thread_metadata(
     *,
     thread_id: UUID,
     user_id: UUID,
-    metadata_updates: dict[str, Any],
+    metadata_updates: dict[str, Any] | None = None,
+    title: str | None = None,
+    summary: str | None = None,
+    status: ThreadStatus | None = None,
 ) -> Thread:
-    """Update thread metadata by merging new metadata with existing metadata.
+    """Update thread metadata, title, summary, and/or status.
 
     Args:
         session: Database session
         thread_id: Thread UUID
         user_id: User UUID (must own the thread)
         metadata_updates: Dictionary of metadata keys to update/merge
+        title: New title for the thread (if provided)
+        summary: New summary for the thread (if provided)
+        status: New status for the thread (if provided)
 
     Returns:
         Updated Thread instance
@@ -535,11 +541,24 @@ async def update_thread_metadata(
     """
     thread = await get_thread(session, thread_id, user_id)
     
-    # Merge new metadata with existing metadata
-    existing_metadata = thread.custom_metadata or {}
-    updated_metadata = {**existing_metadata, **metadata_updates}
+    # Update title if provided
+    if title is not None:
+        thread.title = title
     
-    thread.custom_metadata = updated_metadata
+    # Update summary if provided
+    if summary is not None:
+        thread.summary = summary
+    
+    # Update status if provided
+    if status is not None:
+        thread.status = status
+    
+    # Merge new metadata with existing metadata if provided
+    if metadata_updates is not None:
+        existing_metadata = thread.custom_metadata or {}
+        updated_metadata = {**existing_metadata, **metadata_updates}
+        thread.custom_metadata = updated_metadata
+    
     await session.commit()
     # Refresh with all scalar attributes and relationships to ensure they're loaded in async context
     # This is critical to prevent greenlet errors when accessing attributes later

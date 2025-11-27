@@ -4,6 +4,7 @@ This module creates a deep research agent with custom tools and prompts
 for conducting web research with strategic thinking and context management.
 """
 
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -12,16 +13,12 @@ from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
 from deepagents import create_deep_agent
 
+logger = logging.getLogger(__name__)
+
 # Load .env file to ensure environment variables are available
 env_path = Path(__file__).parent / ".env"
 if env_path.exists():
     load_dotenv(env_path, override=True)
-
-# Ensure LangSmith environment variables are properly set
-# This is critical for org-scoped API keys to work with LangGraph
-# Some LangGraph versions use LANGCHAIN_API_KEY as an alias for LANGSMITH_API_KEY
-if os.getenv("LANGSMITH_API_KEY") and not os.getenv("LANGCHAIN_API_KEY"):
-    os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGSMITH_API_KEY")
 
 from research_agent.prompts import (
     CODE_ANALYST_INSTRUCTIONS,
