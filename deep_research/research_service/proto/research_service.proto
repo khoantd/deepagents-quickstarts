@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package researchservice.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+enum ResearchEventType {
+  RESEARCH_EVENT_TYPE_UNSPECIFIED = 0;
+  RESEARCH_EVENT_TYPE_RESEARCH_STARTED = 1;
+  RESEARCH_EVENT_TYPE_TOOL_CALL = 2;
+  RESEARCH_EVENT_TYPE_TOOL_RESULT = 3;
+  RESEARCH_EVENT_TYPE_SUB_AGENT_DELEGATED = 4;
+  RESEARCH_EVENT_TYPE_SUB_AGENT_RESULT = 5;
+  RESEARCH_EVENT_TYPE_PROGRESS = 6;
+  RESEARCH_EVENT_TYPE_REPORT_AVAILABLE = 7;
+  RESEARCH_EVENT_TYPE_RESEARCH_COMPLETED = 8;
+  RESEARCH_EVENT_TYPE_ERROR = 9;
+}
+
+message ResearchRequest {
+  string query = 1;
+  string sub_agent = 2;
+  uint32 max_concurrent_research_units = 3;
+  uint32 max_researcher_iterations = 4;
+  google.protobuf.Struct metadata = 5;
+}
+
+message ResearchEvent {
+  ResearchEventType event_type = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  google.protobuf.Struct data = 3;
+}
+
+message ResearchResponse {
+  string query = 1;
+  string report = 2;
+  string final_message = 3;
+  google.protobuf.Struct metadata = 4;
+  google.protobuf.Timestamp completed_at = 5;
+}
+
+service ResearchService {
+  rpc Research(ResearchRequest) returns (ResearchResponse);
+  rpc ResearchStream(ResearchRequest) returns (stream ResearchEvent);
+}
+

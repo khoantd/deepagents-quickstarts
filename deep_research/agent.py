@@ -27,6 +27,7 @@ from research_agent.prompts import (
     RESEARCH_WORKFLOW_INSTRUCTIONS,
     SUBAGENT_DELEGATION_INSTRUCTIONS,
     TECHNICAL_DOCUMENTATION_INSTRUCTIONS,
+    PROMPT_COMPOSER_INSTRUCTIONS,
 )
 from research_agent.tools import (
     lightrag_get_status,
@@ -115,6 +116,20 @@ code_analyst_agent = {
     ],
 }
 
+prompt_composer_agent = {
+    "name": "prompt-composer",
+    "description": "Specialist for composing, refining, and optimizing prompt templates and context prompts. Use when the user asks for help writing prompts or needs a template for a specific task.",
+    "system_prompt": PROMPT_COMPOSER_INSTRUCTIONS.format(date=current_date),
+    "tools": [
+        tavily_search,
+        think_tool,
+        lightrag_query,
+        lightrag_insert_text,
+        lightrag_upload_document,
+        lightrag_get_status,
+    ],
+}
+
 # Model options:
 # - OpenAI GPT-4o (recommended for best performance)
 # - OpenAI GPT-4o-mini (faster and more cost-effective)
@@ -141,6 +156,7 @@ agent = create_deep_agent(
         news_researcher_agent,  # News and current events
         technical_docs_agent,  # Technical documentation
         code_analyst_agent,  # Code analysis
+        prompt_composer_agent,  # Prompt composition
         # Add more agents here as needed
     ],
 )
